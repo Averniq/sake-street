@@ -1,0 +1,11 @@
+{
+  "appId": "au.com.sakestreet.ordering",
+  "appName": "Sake Street",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https"
+  },
+  "ios": {
+    "contentInset": "automatic"
+  }
+}

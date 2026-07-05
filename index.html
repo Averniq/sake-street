@@ -1,0 +1,422 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#181513" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Sake Street" />
+    <meta name="format-detection" content="telephone=no" />
+    <title>Sake Street Ordering</title>
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="assets/brand/sake-street-logo-mark.png" />
+    <link rel="icon" type="image/png" href="assets/brand/sake-street-logo-mark.png" />
+    <link rel="stylesheet" href="styles.css?v=20260628-1" />
+  </head>
+  <body>
+    <header class="app-header">
+      <div class="brand-lockup">
+        <div class="brand-logo" id="brandLogo">TW</div>
+        <div>
+          <p class="eyebrow" id="brandSubtitle">Free QR restaurant ordering</p>
+          <h1 id="restaurantTitle">TableOrder MVP</h1>
+        </div>
+      </div>
+      <div class="header-actions">
+        <span class="status-pill ready" id="openStatus">Open</span>
+        <div class="sync-cluster hidden" id="cloudSyncCluster">
+          <span class="status-pill sync-status" id="cloudSyncStatus">Offline</span>
+          <span class="sync-detail" id="cloudSyncDetail">Not synced yet</span>
+        </div>
+        <button class="ghost-button sound-toggle" id="soundToggle" type="button" aria-label="Toggle kitchen order sound" aria-pressed="false" title="Kitchen order sound is off">Sound Off</button>
+        <button class="ghost-button header-login-button" id="staffLoginButton" type="button">Staff Login</button>
+        <div class="staff-identity hidden" id="staffIdentity">
+          <div>
+            <strong id="staffName">Staff</strong>
+            <span id="staffRole">Role</span>
+          </div>
+          <button class="ghost-button" id="staffLogoutButton" type="button">Log Out</button>
+        </div>
+        <button class="primary-button" id="printBillTop">Print Bill</button>
+      </div>
+    </header>
+
+    <nav class="tabs" aria-label="Application sections">
+      <button class="tab active" data-view="customer">Customer</button>
+      <button class="tab" data-view="kitchen">Kitchen</button>
+      <button class="tab" data-view="frontdesk">Front Desk</button>
+      <button class="tab" data-view="reports">Reports</button>
+      <button class="tab" data-view="setup">Admin</button>
+    </nav>
+
+    <main>
+      <section id="customer" class="view active-view">
+        <div class="table-strip">
+          <div>
+            <p class="eyebrow">Scanned table</p>
+            <h2 id="customerTableName">Table 6</h2>
+          </div>
+          <select id="tablePicker" aria-label="Select table"></select>
+        </div>
+
+        <section class="customer-order-status hidden" id="customerOrderStatus" aria-live="polite"></section>
+
+        <div class="category-row" id="categoryRow"></div>
+
+        <div class="customer-layout">
+          <section class="menu-grid" id="menuGrid" aria-label="Menu items"></section>
+
+          <aside class="order-panel" aria-label="Current cart">
+            <div class="panel-title">
+              <h2>Cart</h2>
+              <button class="ghost-button" id="clearCart">Clear</button>
+            </div>
+            <div class="cart-list" id="cartList"></div>
+            <label class="field">
+              <span>Order note</span>
+              <textarea id="orderNote" rows="3" placeholder="Less spicy, no coriander, allergy note"></textarea>
+            </label>
+            <div class="totals">
+              <span>Items total</span>
+              <strong id="cartSubtotal">$0.00</strong>
+            </div>
+            <div class="totals compact-total">
+              <span>GST included</span>
+              <strong id="cartGst">$0.00</strong>
+            </div>
+            <div class="totals grand-total">
+              <span>Total</span>
+              <strong id="cartTotal">$0.00</strong>
+            </div>
+            <button class="submit-button" id="submitOrder">Send to Kitchen</button>
+            <div class="order-confirmation hidden" id="orderConfirmation" aria-live="polite"></div>
+          </aside>
+        </div>
+      </section>
+
+      <section id="kitchen" class="view">
+        <div class="toolbar">
+          <div>
+            <p class="eyebrow">Live kitchen docket</p>
+            <h2>Kitchen Orders</h2>
+          </div>
+          <div class="toolbar-actions">
+            <button class="ghost-button" id="clearLocalOrders" type="button">Clear Local</button>
+            <button class="primary-button" id="printKitchen">Print New</button>
+          </div>
+        </div>
+        <div class="kitchen-alert hidden" id="kitchenAlert" role="status" aria-live="polite"></div>
+        <div class="order-board" id="kitchenBoard"></div>
+      </section>
+
+      <section id="frontdesk" class="view">
+        <div class="frontdesk-layout">
+          <aside class="table-list" id="frontTableList" aria-label="Open tables"></aside>
+          <section class="invoice-panel" id="invoicePanel" aria-label="Invoice"></section>
+        </div>
+      </section>
+
+      <section id="reports" class="view">
+        <div class="toolbar">
+          <div>
+            <p class="eyebrow">Daily performance</p>
+            <h2>Reports</h2>
+          </div>
+          <button class="primary-button" id="printReport">Print Report</button>
+        </div>
+        <div class="report-grid" id="reportMetrics"></div>
+        <div class="report-layout">
+          <section class="setup-panel">
+            <div class="panel-title">
+              <h2>Popular Items</h2>
+            </div>
+            <div id="popularItems"></div>
+          </section>
+          <section class="setup-panel">
+            <div class="panel-title">
+              <h2>Order History</h2>
+            </div>
+            <div id="orderHistory"></div>
+          </section>
+        </div>
+      </section>
+
+      <section id="setup" class="view">
+        <div class="setup-grid">
+          <section class="setup-panel wide-panel database-panel">
+            <div class="panel-title">
+              <div>
+                <p class="eyebrow">Cloud database</p>
+                <h2>Supabase</h2>
+              </div>
+              <button class="ghost-button" id="checkDatabase" type="button">Check Connection</button>
+            </div>
+            <div class="database-status" id="databaseStatus">
+              <span class="status-dot"></span>
+              <div>
+                <strong>Not checked</strong>
+                <p class="muted">Local storage fallback is active.</p>
+              </div>
+            </div>
+            <div class="database-actions">
+              <button class="primary-button" id="uploadCloudMenu" type="button">Upload Current Menu</button>
+              <button class="ghost-button" id="loadCloudData" type="button">Load Cloud Data</button>
+            </div>
+          </section>
+
+          <section class="setup-panel">
+            <div class="panel-title">
+              <h2>Tables</h2>
+              <button class="ghost-button" id="downloadQr">Print QR</button>
+            </div>
+            <div class="qr-sheet" id="qrSheet"></div>
+          </section>
+
+          <section class="setup-panel">
+            <div class="panel-title">
+              <div>
+                <p class="eyebrow">Restaurant admin</p>
+                <h2>Table Manager</h2>
+              </div>
+            </div>
+            <form class="compact-form" id="tableForm">
+              <label class="field">
+                <span>Table name</span>
+                <input id="tableName" required placeholder="Table 9 or Patio 2" />
+              </label>
+              <button class="submit-button" type="submit">Add Table</button>
+            </form>
+            <div class="table-admin-list" id="tableAdminList"></div>
+          </section>
+
+          <section class="setup-panel">
+            <div class="panel-title">
+              <h2>Menu Status</h2>
+              <button class="ghost-button" id="resetDemo">Reset Demo</button>
+            </div>
+            <div id="menuStatus"></div>
+          </section>
+
+          <section class="setup-panel wide-panel">
+            <div class="panel-title">
+              <div>
+                <p class="eyebrow">Restaurant admin</p>
+                <h2>Restaurant Profile</h2>
+              </div>
+            </div>
+            <form class="menu-form" id="profileForm">
+              <label class="field">
+                <span>Restaurant name</span>
+                <input id="restaurantName" required placeholder="Golden Wok" />
+              </label>
+              <label class="field">
+                <span>Short subtitle</span>
+                <input id="restaurantSubtitle" placeholder="Free QR restaurant ordering" />
+              </label>
+              <label class="field">
+                <span>Phone</span>
+                <input id="restaurantPhone" placeholder="02 9000 0000" />
+              </label>
+              <label class="field">
+                <span>ABN / Tax ID</span>
+                <input id="restaurantTaxId" placeholder="00 000 000 000" />
+              </label>
+              <label class="field full-field">
+                <span>Address</span>
+                <input id="restaurantAddress" placeholder="123 King Street, Sydney NSW" />
+              </label>
+              <label class="field">
+                <span>GST / Tax rate</span>
+                <input id="restaurantTaxRate" required min="0" max="30" step="0.1" type="number" />
+              </label>
+              <label class="field">
+                <span>Ordering status</span>
+                <select id="restaurantIsOpen">
+                  <option value="open">Open</option>
+                  <option value="closed">Closed</option>
+                </select>
+              </label>
+              <label class="field full-field">
+                <span>Logo</span>
+                <input id="restaurantLogo" type="file" accept="image/*" />
+              </label>
+              <div class="form-actions">
+                <button class="submit-button" type="submit">Save Profile</button>
+                <button class="ghost-button" id="clearLogo" type="button">Remove Logo</button>
+              </div>
+            </form>
+          </section>
+
+          <section class="setup-panel wide-panel">
+            <div class="panel-title">
+              <div>
+                <p class="eyebrow">Template system</p>
+                <h2>Menu Theme</h2>
+              </div>
+            </div>
+            <form class="menu-form" id="themeForm">
+              <label class="field">
+                <span>Theme preset</span>
+                <select id="themePreset"></select>
+              </label>
+              <label class="field">
+                <span>Primary color</span>
+                <input id="primaryColor" type="color" />
+              </label>
+              <label class="field">
+                <span>Menu layout</span>
+                <select id="menuLayout">
+                  <option value="grid">Photo grid</option>
+                  <option value="list">Compact list</option>
+                  <option value="dense">Dense operations</option>
+                </select>
+              </label>
+              <label class="field toggle-field">
+                <span>Show photos</span>
+                <input id="showPhotos" type="checkbox" />
+              </label>
+              <div class="theme-preview full-field" id="themePreview"></div>
+              <div class="form-actions">
+                <button class="submit-button" type="submit">Save Theme</button>
+                <button class="ghost-button" id="applyPresetColor" type="button">Use Preset Color</button>
+              </div>
+            </form>
+          </section>
+
+          <section class="setup-panel wide-panel">
+            <div class="panel-title">
+              <div>
+                <p class="eyebrow">Restaurant admin</p>
+                <h2>Add Menu Item</h2>
+              </div>
+            </div>
+            <form class="menu-form" id="menuForm">
+              <label class="field">
+                <span>Dish name</span>
+                <input id="dishName" required placeholder="Salt Pepper Squid" />
+              </label>
+              <label class="field">
+                <span>Category</span>
+                <input id="dishCategory" required list="categoryOptions" placeholder="Mains" />
+                <datalist id="categoryOptions"></datalist>
+              </label>
+              <label class="field">
+                <span>Price</span>
+                <input id="dishPrice" required min="0" step="0.1" type="number" placeholder="18.80" />
+              </label>
+              <label class="field">
+                <span>Tags</span>
+                <input id="dishTags" placeholder="Popular, Spicy, Vegetarian" />
+              </label>
+              <label class="field">
+                <span>Option template</span>
+                <select id="dishOptionTemplate"></select>
+              </label>
+              <label class="field full-field">
+                <span>Description</span>
+                <textarea id="dishDescription" rows="3" placeholder="Short menu description"></textarea>
+              </label>
+              <label class="field full-field">
+                <span>Photo</span>
+                <input id="dishPhoto" type="file" accept="image/*" />
+              </label>
+              <label class="field full-field">
+                <span>Photo URL</span>
+                <input id="dishPhotoUrl" type="url" placeholder="https://images.unsplash.com/..." />
+              </label>
+              <div class="sample-photo-row full-field" id="samplePhotoRow" aria-label="Sample photo URLs"></div>
+              <div class="form-actions">
+                <button class="submit-button" type="submit">Add Dish</button>
+                <button class="ghost-button" id="clearMenuForm" type="button">Clear</button>
+              </div>
+            </form>
+          </section>
+
+          <section class="setup-panel wide-panel">
+            <div class="panel-title">
+              <div>
+                <p class="eyebrow">CSV / spreadsheet import</p>
+                <h2>Bulk Import Menu</h2>
+              </div>
+              <button class="ghost-button" id="downloadSampleCsv" type="button">Sample CSV</button>
+            </div>
+            <div class="import-grid">
+              <label class="field">
+                <span>CSV file</span>
+                <input id="csvFile" type="file" accept=".csv,text/csv" />
+              </label>
+              <label class="field full-field">
+                <span>Paste CSV</span>
+                <textarea id="csvText" rows="7" placeholder="name,category,price,description,tags,optionTemplate&#10;Chicken Rice,Mains,15.8,House chicken rice,Popular,spiceAddons"></textarea>
+              </label>
+              <div class="form-actions">
+                <button class="submit-button" id="previewCsv" type="button">Preview Import</button>
+                <button class="ghost-button" id="importCsv" type="button" disabled>Import Preview</button>
+                <button class="ghost-button" id="clearCsv" type="button">Clear</button>
+              </div>
+            </div>
+            <div class="import-preview" id="importPreview"></div>
+          </section>
+        </div>
+      </section>
+    </main>
+
+    <div class="modal-backdrop hidden" id="optionModal" role="dialog" aria-modal="true" aria-labelledby="optionTitle">
+      <section class="option-modal">
+        <div class="panel-title">
+          <div>
+            <p class="eyebrow">Choose options</p>
+            <h2 id="optionTitle">Menu Item</h2>
+          </div>
+          <strong id="optionBasePrice">$0.00</strong>
+        </div>
+        <div class="option-groups" id="optionGroups"></div>
+        <div class="option-total">
+          <span>Item total</span>
+          <strong id="optionTotal">$0.00</strong>
+        </div>
+        <div class="form-actions">
+          <button class="submit-button" id="confirmOptions" type="button">Add to Cart</button>
+          <button class="ghost-button" id="cancelOptions" type="button">Cancel</button>
+        </div>
+      </section>
+    </div>
+
+    <div class="modal-backdrop hidden" id="staffAuthModal" role="dialog" aria-modal="true" aria-labelledby="staffAuthTitle">
+      <section class="staff-auth-modal">
+        <div class="auth-brand">
+          <div class="brand-logo" id="authBrandLogo">SS</div>
+          <div>
+            <p class="eyebrow">Secure staff access</p>
+            <h2 id="staffAuthTitle">Employee Login</h2>
+          </div>
+        </div>
+        <form id="staffLoginForm" class="auth-form">
+          <label class="field">
+            <span>Username</span>
+            <input id="staffEmail" type="text" autocomplete="username" required placeholder="Staff" autocapitalize="none" spellcheck="false" />
+          </label>
+          <label class="field">
+            <span>Password</span>
+            <input id="staffPassword" type="password" autocomplete="current-password" required minlength="8" />
+          </label>
+          <p class="auth-error hidden" id="staffAuthError" role="alert"></p>
+          <div class="form-actions">
+            <button class="submit-button" id="staffLoginSubmit" type="submit">Log In</button>
+            <button class="ghost-button" id="cancelStaffLogin" type="button">Cancel</button>
+          </div>
+        </form>
+      </section>
+    </div>
+
+    <template id="printTemplate">
+      <section class="print-page"></section>
+    </template>
+
+    <script src="mobile-shell.js?v=20260628-1"></script>
+    <script src="supabase-config.js?v=20260622-1"></script>
+    <script src="supabase-client.js?v=20260628-1"></script>
+    <script src="app.js?v=20260628-1"></script>
+  </body>
+</html>

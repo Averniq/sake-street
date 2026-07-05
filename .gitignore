@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.netlify/
+.tools/
+.agents/
+.pnpm-store/
+aveniq-site/
+aveniq-saas/
+image-contact-sheets/
+*.log

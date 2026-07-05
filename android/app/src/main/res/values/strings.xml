@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Sake Street</string>
+    <string name="title_activity_main">Sake Street</string>
+    <string name="package_name">au.com.sakestreet.ordering</string>
+    <string name="custom_url_scheme">au.com.sakestreet.ordering</string>
+</resources>

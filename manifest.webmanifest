@@ -1,0 +1,22 @@
+{
+  "id": "/",
+  "name": "Sake Street Ordering",
+  "short_name": "Sake Street",
+  "description": "Japanese table ordering for Sake Street.",
+  "lang": "en-AU",
+  "start_url": "/?source=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#181513",
+  "theme_color": "#181513",
+  "categories": ["food", "business"],
+  "icons": [
+    {
+      "src": "/assets/brand/sake-street-logo-mark.png",
+      "sizes": "500x500",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
