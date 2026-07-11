@@ -10,7 +10,10 @@
     "mobile:add:android": "cap add android",
     "mobile:add:ios": "cap add ios",
     "mobile:android": "pnpm run build && cap sync android && cap open android",
-    "mobile:ios": "pnpm run build && cap sync ios && cap open ios"
+    "mobile:ios": "pnpm run build && cap sync ios && cap open ios",
+    "printer:check": "node ./printer-bridge.mjs --check-printer",
+    "printer:test": "node ./printer-bridge.mjs --test-print",
+    "printer:start": "node ./printer-bridge.mjs"
   },
   "devDependencies": {
     "@capacitor/cli": "^8.4.1",

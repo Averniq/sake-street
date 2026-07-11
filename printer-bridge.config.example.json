@@ -1,0 +1,14 @@
+{
+  "supabaseUrl": "https://aovtcjetqnmzzyzyveaa.supabase.co",
+  "publishableKey": "sb_publishable_eDXMBy1kKVPRDKRhl8OsMQ_21ssUZUc",
+  "restaurantSlug": "sake-street",
+  "staffEmail": "staff@sakestreet.com.au",
+  "staffPassword": "REPLACE_WITH_STAFF_PASSWORD",
+  "outputMode": "file",
+  "outputDirectory": "printer-output",
+  "printerIp": "192.168.1.200",
+  "printerPort": 9100,
+  "paperWidth": 42,
+  "copies": 1,
+  "pollIntervalMs": 2500
+}

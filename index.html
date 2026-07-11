@@ -12,7 +12,7 @@
     <link rel="manifest" href="manifest.webmanifest" />
     <link rel="apple-touch-icon" href="assets/brand/sake-street-logo-mark.png" />
     <link rel="icon" type="image/png" href="assets/brand/sake-street-logo-mark.png" />
-    <link rel="stylesheet" href="styles.css?v=20260628-1" />
+    <link rel="stylesheet" href="styles.css?v=20260708-1" />
   </head>
   <body>
     <header class="app-header">
@@ -67,7 +67,7 @@
         <div class="customer-layout">
           <section class="menu-grid" id="menuGrid" aria-label="Menu items"></section>
 
-          <aside class="order-panel" aria-label="Current cart">
+          <aside class="order-panel" id="orderPanel" aria-label="Current cart">
             <div class="panel-title">
               <h2>Cart</h2>
               <button class="ghost-button" id="clearCart">Clear</button>
@@ -102,15 +102,41 @@
             <h2>Kitchen Orders</h2>
           </div>
           <div class="toolbar-actions">
+            <button class="ghost-button" id="kitchenDisplayMode" type="button" title="Show a large kitchen-only order board">Kitchen Display</button>
             <button class="ghost-button" id="clearLocalOrders" type="button">Clear Local</button>
             <button class="primary-button" id="printKitchen">Print New</button>
           </div>
         </div>
         <div class="kitchen-alert hidden" id="kitchenAlert" role="status" aria-live="polite"></div>
         <div class="order-board" id="kitchenBoard"></div>
+        <details class="setup-panel availability-panel">
+          <summary>
+            <span>
+              <span class="eyebrow">Kitchen control</span>
+              <strong>Menu Availability</strong>
+            </span>
+            <span class="muted" id="availabilitySummary">0 sold out</span>
+          </summary>
+          <div class="availability-grid" id="kitchenAvailability"></div>
+        </details>
       </section>
 
       <section id="frontdesk" class="view">
+        <div class="frontdesk-filters" id="frontDeskFilters">
+          <label>Show
+            <select id="frontDeskStatusFilter">
+              <option value="open">Open tables</option>
+              <option value="all">All tables</option>
+              <option value="new">New orders</option>
+              <option value="preparing">Preparing</option>
+              <option value="ready">Ready to serve</option>
+            </select>
+          </label>
+          <label>Find table
+            <input id="frontDeskSearch" type="search" placeholder="Table name">
+          </label>
+          <span id="frontDeskFilterSummary" class="muted"></span>
+        </div>
         <div class="frontdesk-layout">
           <aside class="table-list" id="frontTableList" aria-label="Open tables"></aside>
           <section class="invoice-panel" id="invoicePanel" aria-label="Invoice"></section>
@@ -123,7 +149,12 @@
             <p class="eyebrow">Daily performance</p>
             <h2>Reports</h2>
           </div>
-          <button class="primary-button" id="printReport">Print Report</button>
+          <div class="toolbar-actions">
+            <input id="reportDate" type="date" aria-label="Report date" />
+            <button class="ghost-button" id="reportToday" type="button">Today</button>
+            <button class="ghost-button" id="exportReportCsv" type="button">CSV</button>
+            <button class="primary-button" id="printReport">Print Report</button>
+          </div>
         </div>
         <div class="report-grid" id="reportMetrics"></div>
         <div class="report-layout">
@@ -162,6 +193,31 @@
             <div class="database-actions">
               <button class="primary-button" id="uploadCloudMenu" type="button">Upload Current Menu</button>
               <button class="ghost-button" id="loadCloudData" type="button">Load Cloud Data</button>
+            </div>
+          </section>
+
+          <section class="setup-panel wide-panel backup-panel">
+            <div class="panel-title">
+              <div>
+                <p class="eyebrow">Data safety</p>
+                <h2>Backup &amp; Restore</h2>
+              </div>
+              <button class="primary-button" id="exportBackup" type="button">Export Backup</button>
+            </div>
+            <p class="muted backup-description">Includes the restaurant profile, theme, menu, sold-out status, image references, tables and QR tokens. Orders and staff accounts are excluded.</p>
+            <div class="backup-controls">
+              <label class="field">
+                <span>Backup file</span>
+                <input id="backupFile" type="file" accept=".json,application/json" />
+              </label>
+              <div class="form-actions">
+                <button class="ghost-button" id="previewBackup" type="button">Preview Backup</button>
+                <button class="submit-button" id="restoreBackup" type="button" disabled>Restore Locally</button>
+                <button class="ghost-button" id="clearBackup" type="button">Clear</button>
+              </div>
+            </div>
+            <div class="backup-preview" id="backupPreview">
+              <div class="empty-state">Choose a TableOrder backup file to inspect it before restoring.</div>
             </div>
           </section>
 
@@ -362,6 +418,14 @@
       </section>
     </main>
 
+    <button class="floating-cart hidden" id="floatingCart" type="button" aria-label="View current cart">
+      <span class="floating-cart-summary">
+        <strong id="floatingCartCount">0 items</strong>
+        <small id="floatingCartTotal">$0.00</small>
+      </span>
+      <span class="floating-cart-action">View Cart</span>
+    </button>
+
     <div class="modal-backdrop hidden" id="optionModal" role="dialog" aria-modal="true" aria-labelledby="optionTitle">
       <section class="option-modal">
         <div class="panel-title">
@@ -414,9 +478,9 @@
       <section class="print-page"></section>
     </template>
 
-    <script src="mobile-shell.js?v=20260628-1"></script>
+    <script src="mobile-shell.js?v=20260707-1"></script>
     <script src="supabase-config.js?v=20260622-1"></script>
-    <script src="supabase-client.js?v=20260628-1"></script>
-    <script src="app.js?v=20260628-1"></script>
+    <script src="supabase-client.js?v=20260707-1"></script>
+    <script src="app.js?v=20260707-1"></script>
   </body>
 </html>

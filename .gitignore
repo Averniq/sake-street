@@ -8,3 +8,5 @@ aveniq-site/
 aveniq-saas/
 image-contact-sheets/
 *.log
+printer-bridge.config.json
+printer-output/

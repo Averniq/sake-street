@@ -225,6 +225,7 @@
   .order-panel {
     @apply sticky top-[145px] grid gap-4 rounded-lg border bg-card p-5 shadow-lift;
   }
+  .floating-cart { display: none; }
   .cart-list,
   .order-board,
   #menuStatus { @apply grid gap-2; }
@@ -325,16 +326,36 @@
     box-shadow: 0 0 0 3px rgba(173, 43, 37, 0.1), 0 18px 42px rgba(34, 24, 18, 0.14);
     animation: new-order-pulse 1.2s ease-in-out 3;
   }
+  .kitchen-age { @apply mt-1 text-xs font-extrabold; }
+  .kitchen-age.fresh { color: var(--muted); }
+  .kitchen-age.waiting { color: var(--amber); }
+  .kitchen-age.overdue { color: var(--accent-dark); }
+  .waiting-order { border-color: rgba(164, 101, 20, 0.5); box-shadow: 0 0 0 3px rgba(164,101,20,.09); }
+  .overdue-order { border-color: rgba(173, 43, 37, 0.65); background: rgba(254,242,242,.88); box-shadow: 0 0 0 4px rgba(173,43,37,.13), 0 18px 42px rgba(34,24,18,.13); }
 
   .order-board { @apply grid gap-4; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
   .order-card { @apply grid gap-3 p-4; }
   .order-card-header,
   .invoice-header { @apply flex items-start justify-between gap-3; }
-  .status-actions { @apply grid grid-cols-2 gap-2 sm:grid-cols-4; }
+  .status-actions { @apply grid grid-cols-2 gap-2 sm:grid-cols-5; }
   .status-actions button { @apply min-h-10 rounded-md border bg-stone-50 px-2 text-xs font-bold transition hover:bg-stone-100; }
+  .status-actions .print-action { @apply border-amber-700/30 bg-amber-50 text-amber-900 hover:bg-amber-100; }
   .status-actions .danger-action { @apply border-red-800/30 bg-red-50 text-red-800 hover:bg-red-100; }
+  .availability-panel { @apply mt-5; }
+  .availability-panel summary { @apply flex cursor-pointer list-none items-center justify-between gap-3; }
+  .availability-panel summary::-webkit-details-marker { display: none; }
+  .availability-grid { @apply mt-4 grid gap-2; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+  .availability-row { @apply flex items-center justify-between gap-3 rounded-md border bg-white px-3 py-2; }
+  .availability-row.soldout-row { @apply border-red-800/25 bg-red-50/70; }
+  .availability-row .ghost-button { @apply min-h-9 shrink-0 px-3 text-xs; }
 
   .frontdesk-layout { @apply grid items-start gap-5; grid-template-columns: minmax(230px, 290px) minmax(0, 1fr); }
+  .frontdesk-filters { @apply mb-4 flex flex-wrap items-end gap-3 rounded-lg border bg-card p-3 shadow-sm; }
+  .frontdesk-filters label { @apply grid gap-1 text-xs font-bold text-muted; }
+  .frontdesk-filters select,
+  .frontdesk-filters input { @apply min-h-9; }
+  .frontdesk-filters input { min-width: min(240px, 72vw); }
+  .frontdesk-filters > .muted { @apply pb-2 text-xs font-semibold; }
   .table-list,
   .invoice-panel,
   .setup-panel { @apply p-4; }
@@ -347,15 +368,49 @@
   .form-actions { @apply flex flex-wrap items-center gap-2; }
   .invoice-actions { @apply mt-5; }
 
+  body.kitchen-display-mode .app-header,
+  body.kitchen-display-mode .tabs,
+  body.kitchen-display-mode #kitchen .kitchen-alert,
+  body.kitchen-display-mode #kitchen .availability-panel,
+  body.kitchen-display-mode #kitchen .toolbar-actions > :not(#kitchenDisplayMode) { display: none !important; }
+  body.kitchen-display-mode main { @apply max-w-none p-5; }
+  body.kitchen-display-mode #kitchen .toolbar { @apply mb-5; }
+  body.kitchen-display-mode #kitchen .toolbar h2 { @apply text-3xl; }
+  body.kitchen-display-mode .order-board { grid-template-columns: repeat(auto-fill, minmax(420px, 1fr)); }
+  body.kitchen-display-mode .order-card { @apply gap-5 p-6; }
+  body.kitchen-display-mode .order-card h3 { @apply text-3xl; }
+  body.kitchen-display-mode .order-card .line-row { @apply py-4 text-xl; }
+  body.kitchen-display-mode .order-card .line-row .muted { @apply text-base; }
+  body.kitchen-display-mode .status-pill { @apply min-h-12 px-5 text-lg; }
+  body.kitchen-display-mode .status-actions button { @apply min-h-14 text-base; }
+
   .report-grid { @apply mb-5 grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6; }
   .report-layout { @apply grid gap-5; grid-template-columns: minmax(300px, 420px) minmax(0, 1fr); }
   .metric-card { @apply grid gap-2 p-4; }
   .metric-card strong { @apply text-2xl font-extrabold; }
-  .history-row { @apply grid items-center gap-3 border-b py-3; grid-template-columns: minmax(0,1fr) auto; }
+  .history-row { @apply grid items-start gap-3 border-b py-4; grid-template-columns: minmax(0,1fr) auto; }
+  .history-main { @apply grid min-w-0 gap-1; }
+  .history-title { @apply flex flex-wrap items-center gap-2; }
+  .history-note { @apply rounded-md border border-amber-700/20 bg-amber-50 px-3 py-2 text-sm text-amber-900; }
+  .history-actions { @apply grid justify-items-end gap-2; }
+  .history-actions .ghost-button { @apply min-h-9 px-3; }
 
   .setup-grid { @apply grid grid-cols-2 gap-5; }
   .wide-panel { @apply col-span-2; }
   .database-panel { border-left: 4px solid var(--accent); }
+  .backup-panel { border-left: 4px solid var(--mint); }
+  .backup-description { @apply mt-3 max-w-4xl; }
+  .backup-controls { @apply mt-4 grid items-end gap-4; grid-template-columns: minmax(240px, 420px) minmax(0, 1fr); }
+  .backup-controls input { @apply max-w-none; }
+  .backup-controls .form-actions { @apply m-0; }
+  .backup-controls .submit-button { @apply w-auto min-w-40; }
+  .backup-preview { @apply mt-4; }
+  .backup-summary { @apply grid gap-3 rounded-md border bg-white p-4; }
+  .backup-summary-grid { @apply grid grid-cols-2 gap-3 md:grid-cols-4; }
+  .backup-summary-item { @apply grid gap-1 rounded-md border bg-stone-50 p-3; }
+  .backup-summary-item strong { @apply text-lg; color: var(--accent-dark); }
+  .backup-warning { @apply rounded-md border border-amber-700/25 bg-amber-50 p-3 text-sm font-semibold text-amber-900; }
+  .backup-error { @apply rounded-md border border-red-800/25 bg-red-50 p-3 text-sm font-semibold text-red-800; }
   .database-status { @apply mt-4 flex min-h-16 items-center gap-3 rounded-md border bg-white p-3; }
   .status-dot { @apply h-3 w-3 shrink-0 rounded-full bg-stone-400; }
   .database-status.checking .status-dot { background: var(--blue); }
@@ -402,6 +457,19 @@
   .hidden { display: none; }
   .option-modal { @apply max-h-[92vh] w-full max-w-xl overflow-y-auto rounded-lg border bg-card p-5 shadow-lift; }
   .staff-auth-modal { @apply w-full max-w-md rounded-lg border bg-card p-6 shadow-lift; }
+  .payment-modal { @apply w-full max-w-lg rounded-lg border bg-card p-6 shadow-lift; }
+  .payment-modal-header { @apply mb-5 flex items-start justify-between gap-4 border-b pb-4; }
+  .payment-modal-header h2 { @apply text-2xl font-black; }
+  .payment-summary { @apply mb-5 grid items-center gap-x-4 gap-y-2 rounded-md border bg-white/70 p-4; grid-template-columns: minmax(0,1fr) auto; }
+  .payment-summary span { @apply text-sm font-semibold text-muted; }
+  .payment-summary span small { @apply ml-1 text-xs font-medium; }
+  .payment-summary strong { @apply text-right; }
+  .payment-total-label { @apply mt-2 border-t pt-3 text-base font-extrabold; color: var(--ink); }
+  .payment-total { @apply mt-2 border-t pt-3 text-xl font-black; }
+  .payment-form { @apply grid gap-4; grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .payment-form label { @apply grid gap-1.5 text-sm font-bold; }
+  .payment-form .form-actions { @apply col-span-full mt-1 flex justify-end gap-2; }
+  .payment-change { @apply col-span-full rounded-md border border-dashed bg-white/60 p-3 text-sm font-semibold text-muted; }
   .auth-brand { @apply mb-6 flex items-center gap-3 border-b pb-5; }
   .auth-form { @apply grid gap-4; }
   .auth-error { @apply rounded-md border border-red-800/20 bg-red-50 p-3 text-sm font-semibold text-red-800; }
@@ -458,6 +526,7 @@
   .menu-form,
   .import-grid,
   .compact-form,
+  .backup-controls,
   .table-admin-row {
     grid-template-columns: 1fr;
   }
@@ -467,6 +536,32 @@
     @apply static;
     order: -1;
   }
+  .floating-cart:not(.hidden) {
+    position: fixed;
+    left: 50%;
+    bottom: calc(12px + env(safe-area-inset-bottom));
+    z-index: 35;
+    display: flex;
+    width: min(calc(100vw - 24px), 460px);
+    min-height: 58px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    transform: translateX(-50%);
+    border: 1px solid var(--accent-dark);
+    border-radius: 8px;
+    padding: 10px 14px;
+    background: var(--accent);
+    color: #fff;
+    box-shadow: 0 18px 42px rgba(34,24,18,.28);
+  }
+  .floating-cart-summary { @apply grid min-w-0 text-left leading-tight; }
+  .floating-cart-summary strong { @apply truncate text-sm; }
+  .floating-cart-summary small { @apply text-xs text-white/75; }
+  .floating-cart-action { @apply shrink-0 text-sm font-extrabold; }
+  body.has-floating-cart main { padding-bottom: calc(7rem + env(safe-area-inset-bottom)); }
+  .history-row { grid-template-columns: 1fr; }
+  .history-actions { @apply justify-items-stretch; }
 }
 
 @media (max-width: 640px) {
