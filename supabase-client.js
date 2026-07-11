@@ -214,7 +214,7 @@
     if (!session?.access_token) throw new Error("Staff login is required.");
 
     return request(
-      `orders?select=id,local_id,order_number,table_id,status,note,subtotal,tax,total,created_at,served_at,closed_at,restaurant_tables(local_id,name),order_items(id,menu_item_id,name_snapshot,base_price,unit_price,quantity,options)&restaurant_id=eq.${encodeURIComponent(restaurantId)}&order=created_at.desc&limit=500`,
+      `orders?select=id,local_id,order_number,table_id,status,note,subtotal,tax,total,payment_method,payment_surcharge,payment_total,payment_tendered,payment_change,payment_note,paid_at,created_at,served_at,closed_at,restaurant_tables(local_id,name),order_items(id,menu_item_id,name_snapshot,base_price,unit_price,quantity,options)&restaurant_id=eq.${encodeURIComponent(restaurantId)}&order=created_at.desc&limit=500`,
       { accessToken: session.access_token }
     );
   }
@@ -233,6 +233,40 @@
       accessToken: session.access_token,
       headers: { Prefer: "return=minimal" },
       body: JSON.stringify(body)
+    });
+  }
+
+  async function recordOrderPayment(orderId, payment) {
+    if (!orderId) throw new Error("Cloud order ID is missing.");
+    const session = await getSession();
+    if (!session?.access_token) throw new Error("Staff login is required.");
+    const timestamp = payment.paidAt || new Date().toISOString();
+    return request(`orders?id=eq.${encodeURIComponent(orderId)}`, {
+      method: "PATCH",
+      accessToken: session.access_token,
+      headers: { Prefer: "return=minimal" },
+      body: JSON.stringify({
+        status: "Paid",
+        closed_at: timestamp,
+        paid_at: timestamp,
+        payment_method: payment.method,
+        payment_surcharge: payment.surcharge,
+        payment_total: payment.total,
+        payment_tendered: payment.tendered,
+        payment_change: payment.change,
+        payment_note: payment.note || ""
+      })
+    });
+  }
+
+  async function reprintKitchenOrder(orderId) {
+    if (!orderId) throw new Error("Cloud order ID is missing.");
+    const session = await getSession();
+    if (!session?.access_token) throw new Error("Staff login is required.");
+    return request("rpc/reprint_kitchen_order", {
+      method: "POST",
+      accessToken: session.access_token,
+      body: JSON.stringify({ p_order_id: orderId })
     });
   }
 
@@ -311,7 +345,7 @@
 
   window.TableOrderCloud = {
     config, request, checkConnection, loadRestaurantData, bootstrapMenu, submitOrder, loadCustomerOrderStatus, loadOrders,
-    updateOrderStatus, updateMenuItemPhoto, updateMenuItemSoldOut, createMenuItem, deactivateMenuItem,
+    updateOrderStatus, recordOrderPayment, reprintKitchenOrder, updateMenuItemPhoto, updateMenuItemSoldOut, createMenuItem, deactivateMenuItem,
     createRestaurantTable, updateRestaurantTable, deactivateRestaurantTable, updateRestaurantProfile,
     signInWithPassword, getSession, getStaffProfile, signOut
   };
