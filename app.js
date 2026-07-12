@@ -1429,7 +1429,7 @@ function renderCategories() {
 function menuSkeleton() {
   return Array.from({ length: 5 }, () => `
     <article class="menu-card menu-skeleton" aria-hidden="true">
-      <div class="skeleton-photo"></div><div class="menu-body"><i></i><i></i><i></i></div>
+      <div class="skeleton-photo"></div><div class="menu-body"><i></i><i></i><i></i></div><div class="menu-purchase"><i></i></div>
     </article>`).join("");
 }
 
@@ -1463,11 +1463,11 @@ function renderMenu() {
         <article class="menu-card ${soldOut ? "soldout" : ""}" data-menu-item="${escapeHtml(item.id)}">
           ${photo}
           <div class="menu-body">
-            <div class="menu-meta"><div><h3>${escapeHtml(item.name)}</h3><span class="menu-category">${escapeHtml(item.category)}</span></div><strong>${money(item.price)}</strong></div>
+            <div class="menu-meta"><div><h3>${escapeHtml(item.name)}</h3><span class="menu-category">${escapeHtml(item.category)}</span></div></div>
             <p class="menu-desc">${escapeHtml(item.description)}</p>
             <div class="tag-row">${tags}${optionLabel}</div>
-            <button data-add="${item.id}" aria-label="Add ${escapeHtml(item.name)}" ${soldOut || !profile.isOpen ? "disabled" : ""}>${soldOut ? "Sold out" : profile.isOpen ? "+" : "Closed"}</button>
           </div>
+          <div class="menu-purchase"><strong>${money(item.price)}</strong><button data-add="${item.id}" aria-label="Add ${escapeHtml(item.name)}" ${soldOut || !profile.isOpen ? "disabled" : ""}>${soldOut ? "Sold out" : profile.isOpen ? "+" : "Closed"}</button></div>
         </article>
       `;
     })
