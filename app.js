@@ -1,5 +1,8 @@
 const STORAGE_KEY = "tableorder-mvp-state";
 const SOUND_STORAGE_KEY = "tableorder-kitchen-sound";
+const BACKUP_FORMAT = "tableorder-backup";
+const BACKUP_VERSION = 1;
+const MAX_BACKUP_FILE_SIZE = 15 * 1024 * 1024;
 const STYLE_VERSION = "japanese-logo-cards-v3";
 const MENU_VERSION = "sake-street-menu-v1";
 
@@ -290,6 +293,7 @@ let soundEnabled = loadSoundPreference();
 let kitchenAudioContext = null;
 let optionItemId = "";
 let importPreviewItems = [];
+let backupRestorePreview = null;
 let staffUser = null;
 let pendingStaffView = "";
 let cloudSyncTimer = null;
@@ -304,6 +308,18 @@ let highlightedKitchenOrderIds = new Set();
 let customerStatusTimer = null;
 let customerStatusBusy = false;
 let customerStatusError = "";
+let cartPanelVisible = false;
+let cartVisibilityObserver = null;
+let menuLoadedOnce = false;
+let menuLoadingTimer = null;
+let darkMode = false;
+let selectedReportDate = localDateKey(new Date());
+let frontDeskStatusFilter = "open";
+let frontDeskSearch = "";
+let kitchenDisplayMode = localStorage.getItem("tableorder-kitchen-display") === "true";
+
+const KITCHEN_WAITING_MINUTES = 15;
+const KITCHEN_OVERDUE_MINUTES = 30;
 
 const CUSTOMER_ORDER_STEPS = [
   { status: "New", label: "Received" },
@@ -412,6 +428,23 @@ function dateLabel(value) {
   }).format(new Date(value));
 }
 
+function localDateKey(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return localDateKey(new Date());
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function friendlyDate(value) {
+  return new Intl.DateTimeFormat("en-AU", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric"
+  }).format(new Date(`${value}T12:00:00`));
+}
+
 function isToday(value) {
   const date = new Date(value);
   const today = new Date();
@@ -438,6 +471,23 @@ function normalizePhotoUrl(value) {
   } catch {
     return "";
   }
+}
+
+const localMenuPhotoById = {
+  miso_soup: "miso-soup.webp", kimchi: "kimchi.webp", seaweed_salad: "seaweed-salad.webp", wakame_salad: "seaweed-salad.webp", tofu_avocado_salad: "tofu-avocado-salad.webp", salmon_salad: "salmon-salad.webp",
+  kingfish_carpaccio: "kingfish-carpaccio.webp", salmon_carpaccio: "salmon-sashimi.webp", scallop_carpaccio: "kingfish-carpaccio.webp", tuna_tataki: "tuna-tataki.webp",
+  edamame_salty: "edamame.webp", edamame_spicy: "spicy-edamame.webp", agedashi_tofu: "miso-eggplant.webp", sweet_potato_tempura: "tempura-white-fish.webp", karaage_chicken: "karaage-chicken.webp", katsu_chicken: "katsu-chicken.webp", spicy_soft_shell_crab_hot: "soft-shell-crab.webp", pork_gyoza: "pork-gyoza.webp", popcorn_prawn: "fried-prawn-roll.webp", miso_eggplant: "miso-eggplant.webp", salmon_rice_bowl: "salmon-rice-bowl.webp", dynamite_scallops: "dynamite-scallops.webp", tempura_white_fish: "tempura-white-fish.webp", tempura_veggies: "tempura-white-fish-2.webp",
+  seared_salmon_belly: "salmon-sashimi.webp", seared_kingfish: "kingfish-sashimi.webp", kingfish_sashimi: "kingfish-sashimi.webp", salmon_ocean: "salmon-sashimi.webp", tuna_salmon_sashimi: "mixed-sashimi.webp", tuna_sashimi: "tuna-tataki.webp", sashimi_ocean: "sashimi-platter.webp", mixed_sashimi: "mixed-sashimi.webp",
+  salmon_nigiri: "salmon-nigiri.webp", kingfish_nigiri: "kingfish-nigiri.webp", tuna_nigiri: "tuna-nigiri.webp", aburi_salmon_nigiri: "salmon-nigiri.webp", aburi_kingfish_nigiri: "kingfish-nigiri.webp", aburi_scallop_nigiri: "nigiri-platter.webp", nigiri_platter: "nigiri-platter.webp", nigiri_sashimi_combo: "sashimi-platter.webp",
+  maki_cucumber: "cucumber-maki.webp", maki_avocado: "avocado-salad.webp", maki_teriyaki_chicken: "teriyaki-chicken-maki.webp", maki_salmon: "salmon-maki.webp", maki_cooked_tuna: "cooked-tuna-roll.webp", maki_fresh_tuna: "tuna-maki.webp", maki_egg: "egg-tamago-maki.webp",
+  roll_vegetarian: "vegetarian-roll.webp", roll_cooked_tuna: "cooked-tuna-roll.webp", roll_chicken_schnitzel: "sushi-roll.webp", roll_teriyaki_chicken: "teriyaki-chicken-roll.webp", roll_fresh_salmon_deluxe: "fresh-salmon-deluxe-roll.webp", roll_seared_salmon: "fresh-salmon-deluxe-roll-2.webp", roll_fried_prawn: "fried-prawn-roll.webp", roll_spicy_soft_shell_crab: "soft-shell-crab.webp", roll_fresh_tuna: "tuna-maki.webp", roll_spicy_fresh_tuna_deluxe: "tuna-tataki-2.webp", roll_california: "california-roll.webp",
+  ramen_vegetable: "ramen.webp", ramen_karaage_chicken: "karaage-ramen.webp", ramen_pork_belly: "pork-bun.webp", ramen_seafood: "ramen.webp", stir_fried_vegetables: "stir-fried-vegetables.webp", teriyaki_chicken: "teriyaki-chicken-roll.webp", teriyaki_tasmanian_salmon: "salmon-rice-bowl-2.webp", teriyaki_kingfish: "kingfish-carpaccio.webp"
+};
+
+function defaultMenuPhotoUrl(item) {
+  const key = String(item?.id || "").replace(/^sake_/, "");
+  const file = localMenuPhotoById[key];
+  return file ? `/assets/menu-photos/${file}` : "";
 }
 
 function allMenuItems() {
@@ -617,6 +667,18 @@ function addToCart(itemId, options = []) {
 
   saveState();
   renderCart();
+  animateCartAdd(itemId);
+}
+
+function animateCartAdd(itemId) {
+  const card = document.querySelector(`[data-menu-item="${CSS.escape(itemId)}"]`);
+  const floatingCart = document.getElementById("floatingCart");
+  card?.classList.add("just-added");
+  floatingCart?.classList.add("cart-bump");
+  window.setTimeout(() => {
+    card?.classList.remove("just-added");
+    floatingCart?.classList.remove("cart-bump");
+  }, 520);
 }
 
 function openOrdersForTable(tableId) {
@@ -641,6 +703,22 @@ function orderTax(order) {
 
 function orderTotal(order) {
   return orderLineTotal(order);
+}
+
+function paidOrderTotal(order) {
+  return Number.isFinite(Number(order.payment?.total)) ? Number(order.payment.total) : orderTotal(order);
+}
+
+function paidOrderTax(order) {
+  return orderTax(order) + taxIncludedIn(Number(order.payment?.surcharge) || 0);
+}
+
+function orderItemSummary(order, maxItems = 3) {
+  const items = order.items || [];
+  if (!items.length) return "No items";
+  const visible = items.slice(0, maxItems).map((item) => `${item.quantity} x ${item.name}`);
+  const remaining = items.length - visible.length;
+  return remaining > 0 ? `${visible.join(", ")} +${remaining} more` : visible.join(", ");
 }
 
 function tableTokenFromUrl() {
@@ -1133,6 +1211,17 @@ function cloudOrderToLocal(row) {
     createdLabel: dateLabel(row.created_at),
     servedAt: row.served_at || null,
     closedAt: row.closed_at || null,
+    payment: row.payment_method
+      ? {
+          method: row.payment_method,
+          surcharge: Number(row.payment_surcharge) || 0,
+          total: Number(row.payment_total) || 0,
+          tendered: row.payment_tendered === null ? null : Number(row.payment_tendered) || 0,
+          change: row.payment_change === null ? null : Number(row.payment_change) || 0,
+          note: row.payment_note || "",
+          paidAt: row.paid_at || row.closed_at || null
+        }
+      : null,
     subtotal: Number(row.subtotal) || 0,
     tax: Number(row.tax) || 0,
     total: Number(row.total) || 0,
@@ -1157,9 +1246,12 @@ async function syncCloudOrders({ notify = true } = {}) {
   try {
     const rows = await window.TableOrderCloud.loadOrders(staffUser.restaurantId);
     const cloudOrders = rows.map(cloudOrderToLocal);
+    const existingByCloudId = new Map(state.orders.filter((order) => order.cloudId).map((order) => [order.cloudId, order]));
     const trackedByCloudId = new Set(state.orders.filter((order) => order.customerTracked && order.cloudId).map((order) => order.cloudId));
     cloudOrders.forEach((order) => {
       if (trackedByCloudId.has(order.cloudId)) order.customerTracked = true;
+      const existing = existingByCloudId.get(order.cloudId);
+      if (!order.payment && existing?.payment) order.payment = existing.payment;
     });
     const cloudIds = new Set(cloudOrders.map((order) => order.cloudId));
     const localOnlyOrders = state.orders.filter((order) => !order.cloudId || (!cloudIds.has(order.cloudId) && order.cloudStatus === "local"));
@@ -1313,6 +1405,8 @@ function renderCategories() {
   const row = document.getElementById("categoryRow");
   const categories = menuCategories();
   if (!categories.includes(activeCategory)) activeCategory = "All";
+  const sectionTitle = document.getElementById("menuSectionTitle");
+  if (sectionTitle) sectionTitle.textContent = activeCategory === "All" ? "Menu" : activeCategory;
   row.innerHTML = categories
     .map(
       (category) =>
@@ -1323,41 +1417,57 @@ function renderCategories() {
   row.querySelectorAll("button").forEach((button) => {
     button.addEventListener("click", () => {
       activeCategory = button.dataset.category;
+      if (sectionTitle) sectionTitle.textContent = activeCategory === "All" ? "Menu" : activeCategory;
       row.querySelectorAll("button").forEach((categoryButton) => {
         categoryButton.classList.toggle("active", categoryButton.dataset.category === activeCategory);
       });
-      renderMenu();
+      renderMenuLoading();
     });
   });
+}
+
+function menuSkeleton() {
+  return Array.from({ length: 5 }, () => `
+    <article class="menu-card menu-skeleton" aria-hidden="true">
+      <div class="skeleton-photo"></div><div class="menu-body"><i></i><i></i><i></i></div><div class="menu-purchase"><i></i></div>
+    </article>`).join("");
+}
+
+function renderMenuLoading() {
+  const grid = document.getElementById("menuGrid");
+  if (!grid) return;
+  window.clearTimeout(menuLoadingTimer);
+  grid.setAttribute("aria-busy", "true");
+  grid.innerHTML = menuSkeleton();
+  menuLoadingTimer = window.setTimeout(() => renderMenu(), 180);
 }
 
 function renderMenu() {
   const grid = document.getElementById("menuGrid");
   const profile = restaurant();
   const items = allMenuItems().filter((item) => activeCategory === "All" || item.category === activeCategory);
+  grid.setAttribute("aria-busy", "false");
   grid.innerHTML = items
-    .map((item) => {
+    .map((item, index) => {
       const soldOut = itemSoldOut(item);
       const tags = item.tags
         .map((tag) => `<span class="tag ${tag === "Hot" ? "hot" : tag === "Chef" ? "soft" : ""}">${escapeHtml(tag)}</span>`)
         .join("");
       const optionLabel = item.optionTemplate && item.optionTemplate !== "none" ? `<span class="tag soft">${escapeHtml(optionTemplateLabel(item.optionTemplate))}</span>` : "";
-      const photoUrl = normalizePhotoUrl(item.photoData);
+      const photoUrl = normalizePhotoUrl(item.photoData) || defaultMenuPhotoUrl(item);
       const photo = photoUrl
         ? `<div class="food-photo custom-photo" style="background-image: url('${escapeHtml(photoUrl)}')" role="img" aria-label="${escapeHtml(item.name)}"></div>`
         : `<div class="food-photo ${item.photo}" role="img" aria-label="${escapeHtml(item.name)}"></div>`;
-      return `
-        <article class="menu-card ${soldOut ? "soldout" : ""}">
+      const recommendation = index === Math.min(4, items.length - 1) && items.length > 4 ? `<div class="recommendation-label"><span>★</span><div><small>Recommended for you</small><strong>Customers also ordered</strong></div></div>` : "";
+      return `${recommendation}
+        <article class="menu-card ${soldOut ? "soldout" : ""}" data-menu-item="${escapeHtml(item.id)}">
           ${photo}
           <div class="menu-body">
-            <div class="menu-meta">
-              <h3>${escapeHtml(item.name)}</h3>
-              <strong>${money(item.price)}</strong>
-            </div>
+            <div class="menu-meta"><div><h3>${escapeHtml(item.name)}</h3><span class="menu-category">${escapeHtml(item.category)}</span></div></div>
             <p class="menu-desc">${escapeHtml(item.description)}</p>
             <div class="tag-row">${tags}${optionLabel}</div>
-            <button data-add="${item.id}" ${soldOut || !profile.isOpen ? "disabled" : ""}>${soldOut ? "Sold Out" : profile.isOpen ? "Add" : "Closed"}</button>
           </div>
+          <div class="menu-purchase"><strong>${money(item.price)}</strong><button data-add="${item.id}" aria-label="Add ${escapeHtml(item.name)}" ${soldOut || !profile.isOpen ? "disabled" : ""}>${soldOut ? "Sold out" : profile.isOpen ? "+" : "Closed"}</button></div>
         </article>
       `;
     })
@@ -1373,7 +1483,8 @@ function renderMenu() {
         addToCart(id);
       }
     });
-  });
+    });
+  menuLoadedOnce = true;
 }
 
 function renderCart() {
@@ -1408,6 +1519,7 @@ function renderCart() {
   document.getElementById("cartTotal").textContent = money(cartTotal());
   document.getElementById("submitOrder").disabled = !profile.isOpen || !entries.length;
   document.getElementById("submitOrder").textContent = profile.isOpen ? "Send to Kitchen" : "Ordering Closed";
+  renderFloatingCart(entries);
   renderOrderConfirmation();
   list.querySelectorAll("[data-inc]").forEach((button) => {
     button.addEventListener("click", () => {
@@ -1430,6 +1542,38 @@ function renderCart() {
       renderCart();
     });
   });
+}
+
+function renderFloatingCart(entries = cartEntries()) {
+  const button = document.getElementById("floatingCart");
+  if (!button) return;
+  const itemCount = entries.reduce((sum, entry) => sum + entry.quantity, 0);
+  const show = activeView === "customer" && itemCount > 0 && !cartPanelVisible;
+  button.classList.toggle("hidden", !show);
+  document.body.classList.toggle("has-floating-cart", show);
+  document.getElementById("floatingCartCount").textContent = `${itemCount} item${itemCount === 1 ? "" : "s"}`;
+  document.getElementById("floatingCartTotal").textContent = money(cartTotal());
+}
+
+function setupFloatingCart() {
+  const panel = document.getElementById("orderPanel");
+  const button = document.getElementById("floatingCart");
+  if (!panel || !button) return;
+
+  button.addEventListener("click", () => {
+    panel.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+
+  if (!("IntersectionObserver" in window)) return;
+  cartVisibilityObserver?.disconnect();
+  cartVisibilityObserver = new IntersectionObserver(
+    ([entry]) => {
+      cartPanelVisible = entry.isIntersecting;
+      renderFloatingCart();
+    },
+    { threshold: 0.2 }
+  );
+  cartVisibilityObserver.observe(panel);
 }
 
 function renderOrderConfirmation() {
@@ -1710,36 +1854,291 @@ async function updateOrderStatus(orderId, status) {
   }
 }
 
-async function markOrdersPaid(orders) {
-  const previous = orders.map((order) => ({ order, status: order.status, closedAt: order.closedAt }));
-  const closedAt = new Date().toISOString();
-  orders.forEach((order) => {
+function closePaymentModal() {
+  document.getElementById("paymentModal")?.remove();
+}
+
+function showPaymentModal(orders) {
+  if (!orders.length) return;
+  const table = allTables().find((entry) => entry.id === orders[0].tableId);
+  const foodTotal = orders.reduce((sum, order) => sum + orderTotal(order), 0);
+  closePaymentModal();
+
+  const modal = document.createElement("div");
+  modal.id = "paymentModal";
+  modal.className = "modal-backdrop";
+  modal.setAttribute("role", "dialog");
+  modal.setAttribute("aria-modal", "true");
+  modal.innerHTML = `
+    <section class="payment-modal" aria-labelledby="paymentTitle">
+      <div class="payment-modal-header">
+        <div>
+          <p class="eyebrow">Take payment</p>
+          <h2 id="paymentTitle">${escapeHtml(table?.name || "Table")}</h2>
+        </div>
+        <button class="icon-button" id="closePayment" type="button" aria-label="Close payment">X</button>
+      </div>
+      <div class="payment-summary">
+        <span>Food total <small>GST included</small></span>
+        <strong id="paymentFoodTotal">${money(foodTotal)}</strong>
+        <span id="paymentSurchargeLabel">Card surcharge</span>
+        <strong id="paymentSurcharge">${money(0)}</strong>
+        <span class="payment-total-label">Amount to pay</span>
+        <strong class="payment-total" id="paymentDue">${money(foodTotal)}</strong>
+      </div>
+      <form class="payment-form" id="paymentForm">
+        <label>Payment method
+          <select id="paymentMethod">
+            <option value="Cash">Cash</option>
+            <option value="Card">Card</option>
+            <option value="EFTPOS">EFTPOS</option>
+            <option value="Other">Other</option>
+          </select>
+        </label>
+        <label id="surchargeField">Surcharge %
+          <input id="paymentSurchargeRate" type="number" inputmode="decimal" min="0" max="20" step="0.01" value="0">
+        </label>
+        <label id="tenderedField">Cash received
+          <input id="paymentTendered" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0.00">
+        </label>
+        <p class="payment-change" id="paymentChange" aria-live="polite">Enter the cash received to calculate change.</p>
+        <label class="full-field">Payment note <span class="muted">optional</span>
+          <input id="paymentNote" maxlength="160" placeholder="e.g. card terminal receipt number">
+        </label>
+        <div class="form-actions">
+          <button class="ghost-button" id="cancelPayment" type="button">Cancel</button>
+          <button class="submit-button" id="confirmPayment" type="submit">Confirm payment</button>
+        </div>
+      </form>
+    </section>
+  `;
+
+  document.body.appendChild(modal);
+  const methodInput = document.getElementById("paymentMethod");
+  const surchargeField = document.getElementById("surchargeField");
+  const surchargeRateInput = document.getElementById("paymentSurchargeRate");
+  const tenderedField = document.getElementById("tenderedField");
+  const tenderedInput = document.getElementById("paymentTendered");
+  const paymentDue = document.getElementById("paymentDue");
+  const paymentSurcharge = document.getElementById("paymentSurcharge");
+  const paymentSurchargeLabel = document.getElementById("paymentSurchargeLabel");
+  const paymentChange = document.getElementById("paymentChange");
+  const confirmButton = document.getElementById("confirmPayment");
+
+  const paymentValues = () => {
+    const method = methodInput.value;
+    const surchargeRate = ["Card", "EFTPOS"].includes(method) ? Math.max(0, Number(surchargeRateInput.value) || 0) : 0;
+    const surcharge = Math.round(foodTotal * surchargeRate) / 100;
+    const due = Math.round((foodTotal + surcharge) * 100) / 100;
+    const tendered = Math.max(0, Number(tenderedInput.value) || 0);
+    return { method, surchargeRate, surcharge, due, tendered, change: Math.max(0, Math.round((tendered - due) * 100) / 100) };
+  };
+
+  const refresh = () => {
+    const values = paymentValues();
+    const needsSurcharge = ["Card", "EFTPOS"].includes(values.method);
+    const isCash = values.method === "Cash";
+    surchargeField.classList.toggle("hidden", !needsSurcharge);
+    paymentSurchargeLabel.classList.toggle("hidden", !needsSurcharge);
+    paymentSurcharge.classList.toggle("hidden", !needsSurcharge);
+    tenderedField.classList.toggle("hidden", !isCash);
+    paymentDue.textContent = money(values.due);
+    paymentSurcharge.textContent = money(values.surcharge);
+    if (isCash) {
+      const hasTendered = tenderedInput.value.trim() !== "";
+      paymentChange.textContent = !hasTendered
+        ? "Enter the cash received to calculate change."
+        : values.tendered < values.due
+          ? `${money(values.due - values.tendered)} still owing.`
+          : `Change to return: ${money(values.change)}`;
+      confirmButton.disabled = !hasTendered || values.tendered < values.due;
+    } else {
+      paymentChange.textContent = values.surcharge ? `Includes ${money(values.surcharge)} surcharge.` : "No surcharge added.";
+      confirmButton.disabled = false;
+    }
+  };
+
+  methodInput.addEventListener("change", refresh);
+  surchargeRateInput.addEventListener("input", refresh);
+  tenderedInput.addEventListener("input", refresh);
+  document.getElementById("closePayment").addEventListener("click", closePaymentModal);
+  document.getElementById("cancelPayment").addEventListener("click", closePaymentModal);
+  document.getElementById("paymentForm").addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const values = paymentValues();
+    if (values.method === "Cash" && values.tendered < values.due) return;
+    const note = document.getElementById("paymentNote").value.trim();
+    confirmButton.disabled = true;
+    confirmButton.textContent = "Recording...";
+    const recorded = await markOrdersPaid(orders, { ...values, note });
+    if (recorded) closePaymentModal();
+    else {
+      confirmButton.disabled = false;
+      confirmButton.textContent = "Confirm payment";
+    }
+  });
+  modal.addEventListener("click", (event) => {
+    if (event.target.id === "paymentModal") closePaymentModal();
+  });
+  refresh();
+  methodInput.focus();
+}
+
+function paymentAllocations(orders, surcharge) {
+  const totalCents = Math.round(orders.reduce((sum, order) => sum + orderTotal(order), 0) * 100);
+  let remainingCents = Math.round(surcharge * 100);
+  return orders.map((order, index) => {
+    const orderCents = Math.round(orderTotal(order) * 100);
+    const allocated = index === orders.length - 1 ? remainingCents : Math.round((Math.round(surcharge * 100) * orderCents) / totalCents);
+    remainingCents -= allocated;
+    return allocated / 100;
+  });
+}
+
+async function markOrdersPaid(orders, payment) {
+  if (!orders.length) return false;
+  const previous = orders.map((order) => ({ order, status: order.status, closedAt: order.closedAt, payment: order.payment || null }));
+  const paidAt = new Date().toISOString();
+  const allocations = paymentAllocations(orders, payment.surcharge);
+  orders.forEach((order, index) => {
+    const surcharge = allocations[index];
     order.status = "Paid";
-    order.closedAt = closedAt;
+    order.closedAt = paidAt;
+    order.payment = {
+      method: payment.method,
+      surcharge,
+      total: Math.round((orderTotal(order) + surcharge) * 100) / 100,
+      tendered: index === 0 && payment.method === "Cash" ? payment.tendered : null,
+      change: index === 0 && payment.method === "Cash" ? payment.change : null,
+      note: payment.note || "",
+      paidAt
+    };
   });
   saveState();
   render();
 
   try {
-    await Promise.all(orders.filter((order) => order.cloudId).map((order) => window.TableOrderCloud.updateOrderStatus(order.cloudId, "Paid")));
+    await Promise.all(
+      orders
+        .filter((order) => order.cloudId)
+        .map((order) => window.TableOrderCloud.recordOrderPayment(order.cloudId, order.payment))
+    );
     lastCloudSyncAt = new Date();
     setCloudSyncStatus("live", "Live", cloudSyncSummary());
     syncCloudOrders({ notify: false });
+    showOrderToast(`Payment recorded by ${payment.method}.`, "success");
+    return true;
   } catch (error) {
-    previous.forEach(({ order, status, closedAt: oldClosedAt }) => {
+    previous.forEach(({ order, status, closedAt, payment: previousPayment }) => {
       order.status = status;
-      order.closedAt = oldClosedAt;
+      order.closedAt = closedAt;
+      order.payment = previousPayment;
     });
     saveState();
     render();
     setCloudSyncStatus("offline", "Offline");
     showOrderToast(`Payment status was not updated: ${error.message}`, "warning");
+    return false;
   }
 }
 
+async function reprintKitchenOrders(orders) {
+  const cloudOrders = orders.filter((order) => order.cloudId);
+  if (!cloudOrders.length) {
+    showOrderToast("Only cloud-synced orders can be reprinted.", "warning");
+    return;
+  }
+  if (!window.TableOrderCloud?.reprintKitchenOrder) {
+    showOrderToast("Kitchen reprint is not available yet. Run the latest Supabase print SQL first.", "warning");
+    return;
+  }
+
+  try {
+    await Promise.all(cloudOrders.map((order) => window.TableOrderCloud.reprintKitchenOrder(order.cloudId)));
+    showOrderToast(`${cloudOrders.length} order${cloudOrders.length === 1 ? "" : "s"} sent to printer again.`, "success");
+  } catch (error) {
+    showOrderToast(`Reprint failed: ${error.message}`, "warning");
+  }
+}
+
+async function toggleMenuItemSoldOut(id) {
+  const item = itemById(id);
+  if (!item) return;
+  const soldOut = !itemSoldOut({ id });
+  state.soldOutIds = soldOut
+    ? [...new Set([...state.soldOutIds, id])]
+    : state.soldOutIds.filter((entry) => entry !== id);
+  saveState();
+  render();
+
+  if (!item.cloudId || !window.TableOrderCloud?.updateMenuItemSoldOut || !staffUser) {
+    showOrderToast(item.cloudId ? "Sold out status saved locally. Staff login is required for cloud sync." : "Sold out status saved locally.", "success");
+    return;
+  }
+
+  try {
+    await window.TableOrderCloud.updateMenuItemSoldOut(item.cloudId, soldOut);
+    showOrderToast("Sold out status saved to cloud.", "success");
+    await loadCloudDataIntoApp({ silent: true });
+  } catch (error) {
+    showOrderToast(`Sold out cloud save failed: ${error.message}`, "warning");
+  }
+}
+
+function renderKitchenAvailability() {
+  const panel = document.getElementById("kitchenAvailability");
+  if (!panel) return;
+  const soldOutCount = allMenuItems().filter((item) => itemSoldOut(item)).length;
+  document.getElementById("availabilitySummary").textContent = `${soldOutCount} sold out`;
+  panel.innerHTML = allMenuItems()
+    .map((item) => {
+      const soldOut = itemSoldOut(item);
+      return `
+        <div class="availability-row ${soldOut ? "soldout-row" : ""}">
+          <span>
+            <strong>${escapeHtml(item.name)}</strong>
+            <p class="muted">${escapeHtml(item.category)} - ${money(item.price)}</p>
+          </span>
+          <button class="ghost-button" type="button" data-kitchen-soldout="${escapeHtml(item.id)}">${soldOut ? "Make Available" : "Sold Out"}</button>
+        </div>
+      `;
+    })
+    .join("");
+
+  panel.querySelectorAll("[data-kitchen-soldout]").forEach((button) => {
+    button.addEventListener("click", () => toggleMenuItemSoldOut(button.dataset.kitchenSoldout));
+  });
+}
+
+function kitchenOrderAge(order) {
+  const ageMinutes = Math.max(0, Math.floor((Date.now() - new Date(order.createdAt).getTime()) / 60000));
+  if (ageMinutes >= KITCHEN_OVERDUE_MINUTES) return { ageMinutes, state: "overdue", label: `Overdue ${ageMinutes} min` };
+  if (ageMinutes >= KITCHEN_WAITING_MINUTES) return { ageMinutes, state: "waiting", label: `Waiting ${ageMinutes} min` };
+  return { ageMinutes, state: "fresh", label: `${ageMinutes} min ago` };
+}
+
+function setKitchenDisplayMode(enabled) {
+  kitchenDisplayMode = Boolean(enabled);
+  localStorage.setItem("tableorder-kitchen-display", String(kitchenDisplayMode));
+  document.body.classList.toggle("kitchen-display-mode", kitchenDisplayMode);
+  const button = document.getElementById("kitchenDisplayMode");
+  if (button) button.textContent = kitchenDisplayMode ? "Exit Display" : "Kitchen Display";
+  if (kitchenDisplayMode && document.documentElement.requestFullscreen && !document.fullscreenElement) {
+    document.documentElement.requestFullscreen().catch(() => {});
+  }
+  if (!kitchenDisplayMode && document.fullscreenElement) document.exitFullscreen?.().catch(() => {});
+  renderKitchen();
+}
+
 function renderKitchen() {
+  renderKitchenAvailability();
+  document.body.classList.toggle("kitchen-display-mode", kitchenDisplayMode);
+  const displayButton = document.getElementById("kitchenDisplayMode");
+  if (displayButton) displayButton.textContent = kitchenDisplayMode ? "Exit Display" : "Kitchen Display";
   const board = document.getElementById("kitchenBoard");
-  const activeOrders = state.orders.filter((order) => !["Served", "Paid", "Cancelled"].includes(order.status));
+  const activeOrders = state.orders
+    .filter((order) => !["Served", "Paid", "Cancelled"].includes(order.status))
+    .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
 
   if (!activeOrders.length) {
     board.innerHTML = `<div class="empty-state">No active kitchen orders.</div>`;
@@ -1750,6 +2149,7 @@ function renderKitchen() {
     .map((order) => {
       const table = allTables().find((entry) => entry.id === order.tableId);
       const highlighted = highlightedKitchenOrderIds.has(kitchenOrderAlertKey(order));
+      const age = kitchenOrderAge(order);
       const lines = order.items
         .map(
           (item) => `
@@ -1761,12 +2161,13 @@ function renderKitchen() {
         )
         .join("");
       return `
-        <article class="order-card ${highlighted ? "new-order-highlight" : ""}">
+        <article class="order-card ${highlighted ? "new-order-highlight" : ""} ${age.state === "overdue" ? "overdue-order" : age.state === "waiting" ? "waiting-order" : ""}">
           <div class="order-card-header">
             <div>
               <p class="eyebrow">Order #${order.number}</p>
               <h3>${table?.name || "Table"}</h3>
               <p class="muted">${order.createdLabel}</p>
+              <p class="kitchen-age ${age.state}">${age.label}</p>
               <p class="cloud-order-state ${order.cloudStatus || "local"}">${order.cloudStatus === "synced" ? "Cloud synced" : order.cloudStatus === "syncing" ? "Cloud syncing" : "Local only"}</p>
             </div>
             <span class="status-pill ${order.status.toLowerCase()}">${order.status}</span>
@@ -1777,6 +2178,7 @@ function renderKitchen() {
             <button data-status="${order.id}:Preparing">Preparing</button>
             <button data-status="${order.id}:Ready">Ready</button>
             <button data-status="${order.id}:Served">Served</button>
+            <button class="print-action" data-reprint-order="${order.id}">Reprint</button>
             <button class="danger-action" data-status="${order.id}:Cancelled">Cancel</button>
           </div>
         </article>
@@ -1791,11 +2193,28 @@ function renderKitchen() {
       updateOrderStatus(orderId, status);
     });
   });
+  board.querySelectorAll("[data-reprint-order]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const order = state.orders.find((entry) => entry.id === button.dataset.reprintOrder);
+      if (order) reprintKitchenOrders([order]);
+    });
+  });
 }
 
 function renderFrontDesk() {
   const tableList = document.getElementById("frontTableList");
-  tableList.innerHTML = allTables()
+  const normalizedSearch = frontDeskSearch.trim().toLowerCase();
+  const visibleTables = allTables().filter((table) => {
+    const openOrders = openOrdersForTable(table.id);
+    const hasMatch =
+      frontDeskStatusFilter === "all" ||
+      (frontDeskStatusFilter === "open" && openOrders.length > 0) ||
+      openOrders.some((order) => order.status.toLowerCase() === frontDeskStatusFilter);
+    return hasMatch && (!normalizedSearch || table.name.toLowerCase().includes(normalizedSearch));
+  });
+  const summary = document.getElementById("frontDeskFilterSummary");
+  if (summary) summary.textContent = `${visibleTables.length} table${visibleTables.length === 1 ? "" : "s"} shown`;
+  tableList.innerHTML = visibleTables
     .map((table) => {
       const count = openOrdersForTable(table.id).length;
       return `
@@ -1805,7 +2224,7 @@ function renderFrontDesk() {
         </button>
       `;
     })
-    .join("");
+    .join("") || `<div class="empty-state">No tables match this filter.</div>`;
 
   tableList.querySelectorAll("[data-front-table]").forEach((button) => {
     button.addEventListener("click", () => {
@@ -1868,16 +2287,18 @@ function renderInvoice() {
     <div class="line-row"><span>Total</span><strong>${money(total)}</strong></div>
     <div class="invoice-actions">
       <button class="primary-button" id="printInvoice">Print Invoice</button>
+      <button class="ghost-button" id="reprintTableKitchen">Reprint Kitchen</button>
       <button class="ghost-button" id="markPaid">Mark Paid</button>
     </div>
   `;
 
   document.getElementById("printInvoice").addEventListener("click", () => printInvoice(table.id));
-  document.getElementById("markPaid").addEventListener("click", () => markOrdersPaid(orders));
+  document.getElementById("reprintTableKitchen").addEventListener("click", () => reprintKitchenOrders(orders));
+  document.getElementById("markPaid").addEventListener("click", () => showPaymentModal(orders));
 }
 
 function reportOrders() {
-  return state.orders.filter((order) => order.status !== "Cancelled" && isToday(order.closedAt || order.servedAt || order.createdAt));
+  return state.orders.filter((order) => order.status !== "Cancelled" && localDateKey(order.closedAt || order.servedAt || order.createdAt) === selectedReportDate);
 }
 
 function paidReportOrders() {
@@ -1902,10 +2323,12 @@ function popularItemsForToday() {
 function renderReports() {
   const orders = reportOrders();
   const paidOrders = paidReportOrders();
-  const grossSales = paidOrders.reduce((sum, order) => sum + orderTotal(order), 0);
-  const tax = paidOrders.reduce((sum, order) => sum + orderTax(order), 0);
+  const grossSales = paidOrders.reduce((sum, order) => sum + paidOrderTotal(order), 0);
+  const tax = paidOrders.reduce((sum, order) => sum + paidOrderTax(order), 0);
   const openValue = orders.filter((order) => order.status !== "Paid" && order.status !== "Cancelled").reduce((sum, order) => sum + orderTotal(order), 0);
   const itemCount = orders.reduce((sum, order) => sum + order.items.reduce((itemSum, item) => itemSum + item.quantity, 0), 0);
+  const dateInput = document.getElementById("reportDate");
+  if (dateInput && dateInput.value !== selectedReportDate) dateInput.value = selectedReportDate;
 
   document.getElementById("reportMetrics").innerHTML = [
     ["Paid sales", money(grossSales)],
@@ -1943,18 +2366,80 @@ function renderReports() {
     ? orders
         .map((order) => {
           const table = allTables().find((entry) => entry.id === order.tableId);
+          const statusClass = String(order.status || "New").toLowerCase();
+          const itemCount = order.items.reduce((sum, item) => sum + item.quantity, 0);
+          const cloudLabel = order.cloudStatus === "synced" ? "Cloud synced" : order.cloudStatus === "syncing" ? "Cloud syncing" : "Local only";
           return `
             <div class="history-row">
-              <div>
-                <strong>#${order.number} - ${escapeHtml(table?.name || "Table")}</strong>
-                <p class="muted">${escapeHtml(order.status)} - ${dateLabel(order.closedAt || order.servedAt || order.createdAt)}</p>
+              <div class="history-main">
+                <div class="history-title">
+                  <strong>#${escapeHtml(order.number)} - ${escapeHtml(table?.name || "Table")}</strong>
+                  <span class="status-pill ${escapeHtml(statusClass)}">${escapeHtml(order.status)}</span>
+                </div>
+                <p class="muted">${dateLabel(order.closedAt || order.servedAt || order.createdAt)} - ${itemCount} item${itemCount === 1 ? "" : "s"} - ${escapeHtml(cloudLabel)}${order.payment?.method ? ` - ${escapeHtml(order.payment.method)}` : ""}</p>
+                <p class="muted">${escapeHtml(orderItemSummary(order))}</p>
+                ${order.note ? `<p class="history-note"><strong>Note:</strong> ${escapeHtml(order.note)}</p>` : ""}
               </div>
-              <strong>${money(orderTotal(order))}</strong>
+              <div class="history-actions">
+                <strong>${money(order.status === "Paid" ? paidOrderTotal(order) : orderTotal(order))}</strong>
+                <button class="ghost-button" type="button" data-history-reprint="${escapeHtml(order.id)}">Reprint</button>
+              </div>
             </div>
           `;
         })
         .join("")
-    : `<div class="empty-state">No orders today yet.</div>`;
+    : `<div class="empty-state">No orders for ${escapeHtml(friendlyDate(selectedReportDate))}.</div>`;
+
+  document.querySelectorAll("[data-history-reprint]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const order = state.orders.find((entry) => entry.id === button.dataset.historyReprint);
+      if (order) reprintKitchenOrders([order]);
+    });
+  });
+}
+
+function csvValue(value) {
+  const text = String(value ?? "");
+  return /[",\n\r]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
+}
+
+function exportReportCsv() {
+  const orders = reportOrders();
+  const rows = [
+    ["Date", "Order", "Table", "Status", "Created", "Closed/Served", "Item count", "Items", "Subtotal ex GST", "GST included", "Total", "Payment method", "Surcharge", "Paid total", "Note"]
+  ];
+
+  orders.forEach((order) => {
+    const table = allTables().find((entry) => entry.id === order.tableId);
+    const itemCount = order.items.reduce((sum, item) => sum + item.quantity, 0);
+    rows.push([
+      selectedReportDate,
+      order.number,
+      table?.name || "Table",
+      order.status,
+      dateLabel(order.createdAt),
+      order.closedAt || order.servedAt ? dateLabel(order.closedAt || order.servedAt) : "",
+      itemCount,
+      orderItemSummary(order, 12),
+      orderSubtotal(order).toFixed(2),
+      (order.status === "Paid" ? paidOrderTax(order) : orderTax(order)).toFixed(2),
+      orderTotal(order).toFixed(2),
+      order.payment?.method || "",
+      (Number(order.payment?.surcharge) || 0).toFixed(2),
+      (order.status === "Paid" ? paidOrderTotal(order) : orderTotal(order)).toFixed(2),
+      order.note || ""
+    ]);
+  });
+
+  const csv = rows.map((row) => row.map(csvValue).join(",")).join("\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `sake-street-report-${selectedReportDate}.csv`;
+  link.click();
+  URL.revokeObjectURL(url);
+  showOrderToast(`Report CSV exported for ${friendlyDate(selectedReportDate)}.`);
 }
 
 function renderSetup() {
@@ -2040,29 +2525,7 @@ function renderSetup() {
   });
 
   document.querySelectorAll("[data-soldout]").forEach((button) => {
-    button.addEventListener("click", async () => {
-      const id = button.dataset.soldout;
-      const item = itemById(id);
-      const soldOut = !itemSoldOut({ id });
-      state.soldOutIds = itemSoldOut({ id })
-        ? state.soldOutIds.filter((entry) => entry !== id)
-        : [...state.soldOutIds, id];
-      saveState();
-      render();
-
-      if (!item?.cloudId || !window.TableOrderCloud?.updateMenuItemSoldOut || !staffUser) {
-        showOrderToast(item?.cloudId ? "Sold out status saved locally. Staff login is required for cloud sync." : "Sold out status saved locally.", "success");
-        return;
-      }
-
-      try {
-        await window.TableOrderCloud.updateMenuItemSoldOut(item.cloudId, soldOut);
-        showOrderToast("Sold out status saved to cloud.", "success");
-        await loadCloudDataIntoApp({ silent: true });
-      } catch (error) {
-        showOrderToast(`Sold out cloud save failed: ${error.message}`, "warning");
-      }
-    });
+    button.addEventListener("click", () => toggleMenuItemSoldOut(button.dataset.soldout));
   });
 
   document.querySelectorAll("[data-delete-item]").forEach((button) => {
@@ -2295,14 +2758,14 @@ function printInvoice(tableId) {
 function printDailyReport() {
   const profile = restaurant();
   const paidOrders = paidReportOrders();
-  const grossSales = paidOrders.reduce((sum, order) => sum + orderTotal(order), 0);
-  const tax = paidOrders.reduce((sum, order) => sum + orderTax(order), 0);
+  const grossSales = paidOrders.reduce((sum, order) => sum + paidOrderTotal(order), 0);
+  const tax = paidOrders.reduce((sum, order) => sum + paidOrderTax(order), 0);
   const popular = popularItemsForToday();
 
   setPrintContent(`
     <h2>Daily Report</h2>
     <p>${escapeHtml(profile.name)}</p>
-    <p>${dateLabel(new Date())}</p>
+    <p>${escapeHtml(friendlyDate(selectedReportDate))}</p>
     <hr>
     <p>Paid sales: ${money(grossSales)}</p>
     <p>Paid orders: ${paidOrders.length}</p>
@@ -2536,6 +2999,278 @@ async function copyText(text) {
     document.execCommand("copy");
     textarea.remove();
   }
+}
+
+function backupFileName() {
+  const restaurantName = restaurant().name || "restaurant";
+  const slug = restaurantName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "restaurant";
+  return `${slug}-backup-${new Date().toISOString().slice(0, 10)}.json`;
+}
+
+function createBackupPayload() {
+  const profile = restaurant();
+  return {
+    format: BACKUP_FORMAT,
+    version: BACKUP_VERSION,
+    exportedAt: new Date().toISOString(),
+    restaurantSlug: window.TableOrderCloud?.config?.restaurantSlug || "",
+    data: {
+      restaurant: {
+        name: profile.name,
+        subtitle: profile.subtitle || "",
+        address: profile.address || "",
+        phone: profile.phone || "",
+        taxId: profile.taxId || "",
+        taxRate: Number(profile.taxRate) || 0,
+        isOpen: profile.isOpen !== false,
+        logoData: profile.logoData || "",
+        logoWatermarkData: profile.logoWatermarkData || "",
+        themePreset: profile.themePreset || "classic",
+        primaryColor: profile.primaryColor || currentTheme().accent,
+        menuLayout: profile.menuLayout || "grid",
+        showPhotos: profile.showPhotos !== false,
+        styleVersion: profile.styleVersion || STYLE_VERSION
+      },
+      tables: allTables().map((table) => ({
+        id: table.id,
+        name: table.name,
+        token: table.token
+      })),
+      menuItems: allMenuItems().map((item) => ({
+        id: item.id,
+        category: item.category,
+        name: item.name,
+        description: item.description || "",
+        price: Number(item.price) || 0,
+        tags: Array.isArray(item.tags) ? item.tags : [],
+        photo: item.photo || "photo-1",
+        photoData: item.photoData || "",
+        optionTemplate: item.optionTemplate || "none"
+      })),
+      soldOutIds: [...new Set(state.soldOutIds || [])]
+    }
+  };
+}
+
+function exportBackup() {
+  const json = JSON.stringify(createBackupPayload(), null, 2);
+  const blob = new Blob([json], { type: "application/json;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = backupFileName();
+  link.click();
+  window.setTimeout(() => URL.revokeObjectURL(url), 0);
+  showOrderToast("Backup file exported.");
+}
+
+function backupText(value, maxLength, fallback = "") {
+  const text = String(value ?? fallback).trim();
+  return text.slice(0, maxLength) || fallback;
+}
+
+function validateBackupPayload(payload) {
+  const errors = [];
+  const warnings = [];
+  if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+    return { errors: ["This file does not contain a valid backup object."], warnings, data: null };
+  }
+  if (payload.format !== BACKUP_FORMAT) errors.push("This is not a TableOrder backup file.");
+  if (Number(payload.version) !== BACKUP_VERSION) errors.push(`Backup version ${payload.version ?? "unknown"} is not supported.`);
+
+  const source = payload.data;
+  if (!source || typeof source !== "object") errors.push("Backup data is missing.");
+  if (!source?.restaurant || typeof source.restaurant !== "object") errors.push("Restaurant profile is missing.");
+  if (!Array.isArray(source?.tables) || !source.tables.length) errors.push("At least one table is required.");
+  if (!Array.isArray(source?.menuItems) || !source.menuItems.length) errors.push("At least one menu item is required.");
+  if (errors.length) return { errors, warnings, data: null };
+  if (source.tables.length > 500) errors.push("Backup contains too many tables.");
+  if (source.menuItems.length > 5000) errors.push("Backup contains too many menu items.");
+
+  const profile = source.restaurant;
+  const themePreset = themePresets[profile.themePreset] ? profile.themePreset : "classic";
+  const primaryColor = /^#[0-9a-f]{6}$/i.test(String(profile.primaryColor || "")) ? profile.primaryColor : themePresets[themePreset].accent;
+  const menuLayout = ["grid", "list", "dense"].includes(profile.menuLayout) ? profile.menuLayout : "grid";
+  const taxRate = Number(profile.taxRate);
+  const restaurantData = {
+    name: backupText(profile.name, 160),
+    subtitle: backupText(profile.subtitle, 240),
+    address: backupText(profile.address, 500),
+    phone: backupText(profile.phone, 80),
+    taxId: backupText(profile.taxId, 80),
+    taxRate: Number.isFinite(taxRate) && taxRate >= 0 && taxRate <= 30 ? taxRate : defaultRestaurant.taxRate,
+    isOpen: profile.isOpen !== false,
+    logoData: normalizePhotoUrl(profile.logoData),
+    logoWatermarkData: normalizePhotoUrl(profile.logoWatermarkData),
+    themePreset,
+    primaryColor,
+    menuLayout,
+    showPhotos: profile.showPhotos !== false,
+    styleVersion: STYLE_VERSION
+  };
+  if (!restaurantData.name) errors.push("Restaurant name is missing.");
+
+  const tableIds = new Set();
+  const tableTokens = new Set();
+  const tables = source.tables.slice(0, 500).flatMap((table, index) => {
+    const id = backupText(table?.id, 120);
+    const name = backupText(table?.name, 160);
+    const token = backupText(table?.token, 80);
+    if (!id || !name || !/^tk_[A-Za-z0-9_-]{3,64}$/.test(token)) {
+      errors.push(`Table ${index + 1} has an invalid ID, name or QR token.`);
+      return [];
+    }
+    if (tableIds.has(id) || tableTokens.has(token)) {
+      errors.push(`Table ${index + 1} duplicates an ID or QR token.`);
+      return [];
+    }
+    tableIds.add(id);
+    tableTokens.add(token);
+    return [{ id, name, token }];
+  });
+
+  const menuIds = new Set();
+  let removedPhotoCount = 0;
+  const menuItems = source.menuItems.slice(0, 5000).flatMap((item, index) => {
+    const id = backupText(item?.id, 160);
+    const name = backupText(item?.name, 240);
+    const category = backupText(item?.category, 160);
+    const price = Number(item?.price);
+    if (!id || !name || !category || !Number.isFinite(price) || price < 0 || price > 100000) {
+      errors.push(`Menu item ${index + 1} has an invalid ID, name, category or price.`);
+      return [];
+    }
+    if (menuIds.has(id)) {
+      errors.push(`Menu item ${index + 1} duplicates ID ${id}.`);
+      return [];
+    }
+    menuIds.add(id);
+    const originalPhoto = backupText(item?.photoData, 12 * 1024 * 1024);
+    const photoData = normalizePhotoUrl(originalPhoto);
+    if (originalPhoto && !photoData) removedPhotoCount += 1;
+    return [{
+      id,
+      category,
+      name,
+      description: backupText(item?.description, 1000),
+      price,
+      tags: Array.isArray(item?.tags) ? item.tags.slice(0, 20).map((tag) => backupText(tag, 80)).filter(Boolean) : [],
+      photo: backupText(item?.photo, 80, `photo-${(index % 4) + 1}`),
+      photoData,
+      optionTemplate: normalizeOptionTemplate(item?.optionTemplate),
+      soldOut: false
+    }];
+  });
+
+  const soldOutIds = [...new Set((Array.isArray(source.soldOutIds) ? source.soldOutIds : []).map((id) => backupText(id, 160)))]
+    .filter((id) => menuIds.has(id));
+  menuItems.forEach((item) => {
+    item.soldOut = soldOutIds.includes(item.id);
+  });
+  if (removedPhotoCount) warnings.push(`${removedPhotoCount} invalid image reference${removedPhotoCount === 1 ? " was" : "s were"} removed.`);
+
+  return {
+    errors,
+    warnings,
+    data: errors.length ? null : { restaurant: restaurantData, tables, menuItems, soldOutIds },
+    metadata: {
+      exportedAt: payload.exportedAt || "",
+      restaurantSlug: payload.restaurantSlug || ""
+    }
+  };
+}
+
+function renderBackupPreview(result = null) {
+  const preview = document.getElementById("backupPreview");
+  const restoreButton = document.getElementById("restoreBackup");
+  restoreButton.disabled = !result?.data || Boolean(result.errors?.length);
+
+  if (!result) {
+    preview.innerHTML = `<div class="empty-state">Choose a TableOrder backup file to inspect it before restoring.</div>`;
+    return;
+  }
+  if (result.errors?.length) {
+    preview.innerHTML = `<div class="backup-error">${result.errors.map((error) => `<p>${escapeHtml(error)}</p>`).join("")}</div>`;
+    return;
+  }
+
+  const data = result.data;
+  const imageCount = data.menuItems.filter((item) => item.photoData).length;
+  const exportedAt = result.metadata?.exportedAt ? dateLabel(result.metadata.exportedAt) : "Unknown date";
+  preview.innerHTML = `
+    <div class="backup-summary">
+      <div>
+        <p class="eyebrow">Valid backup</p>
+        <h3>${escapeHtml(data.restaurant.name)}</h3>
+        <p class="muted">Exported ${escapeHtml(exportedAt)}. Review the counts before restoring.</p>
+      </div>
+      <div class="backup-summary-grid">
+        <div class="backup-summary-item"><span class="muted">Menu items</span><strong>${data.menuItems.length}</strong></div>
+        <div class="backup-summary-item"><span class="muted">Tables</span><strong>${data.tables.length}</strong></div>
+        <div class="backup-summary-item"><span class="muted">Images</span><strong>${imageCount}</strong></div>
+        <div class="backup-summary-item"><span class="muted">Sold out</span><strong>${data.soldOutIds.length}</strong></div>
+      </div>
+      ${result.warnings?.length ? `<div class="backup-warning">${result.warnings.map((warning) => `<p>${escapeHtml(warning)}</p>`).join("")}</div>` : ""}
+      <div class="backup-warning">Restore Locally does not change Supabase. Orders, staff accounts and passwords remain untouched.</div>
+    </div>
+  `;
+}
+
+async function previewBackupFile() {
+  const file = document.getElementById("backupFile").files[0];
+  backupRestorePreview = null;
+  if (!file) {
+    renderBackupPreview({ errors: ["Choose a backup JSON file first."], warnings: [], data: null });
+    return;
+  }
+  if (file.size > MAX_BACKUP_FILE_SIZE) {
+    renderBackupPreview({ errors: ["Backup file is larger than 15 MB."], warnings: [], data: null });
+    return;
+  }
+
+  try {
+    const payload = JSON.parse(await file.text());
+    const result = validateBackupPayload(payload);
+    backupRestorePreview = result.data ? result : null;
+    renderBackupPreview(result);
+  } catch {
+    renderBackupPreview({ errors: ["Backup file is not valid JSON."], warnings: [], data: null });
+  }
+}
+
+function clearBackupRestore() {
+  backupRestorePreview = null;
+  document.getElementById("backupFile").value = "";
+  renderBackupPreview();
+}
+
+function restoreBackupLocally() {
+  if (!backupRestorePreview?.data) return;
+  const data = backupRestorePreview.data;
+  const confirmed = window.confirm(
+    `Restore ${data.menuItems.length} menu items and ${data.tables.length} tables for ${data.restaurant.name}? Orders and staff accounts will not change.`
+  );
+  if (!confirmed) return;
+
+  const currentProfile = restaurant();
+  const currentTables = new Map(allTables().map((table) => [table.id, table.cloudId]));
+  const currentMenu = new Map(allMenuItems().map((item) => [item.id, item.cloudId]));
+  state.restaurant = {
+    ...defaultRestaurant,
+    ...data.restaurant,
+    cloudId: currentProfile.cloudId || ""
+  };
+  state.tables = data.tables.map((table) => ({ ...table, cloudId: currentTables.get(table.id) || "" }));
+  state.menuItems = data.menuItems.map((item) => ({ ...item, cloudId: currentMenu.get(item.id) || "" }));
+  state.soldOutIds = [...data.soldOutIds];
+  state.localRestoreActive = true;
+
+  if (!state.tables.some((table) => table.id === selectedTableId)) selectedTableId = state.tables[0].id;
+  if (!state.tables.some((table) => table.id === selectedFrontTableId)) selectedFrontTableId = state.tables[0].id;
+  saveState();
+  clearBackupRestore();
+  render();
+  showOrderToast("Backup restored locally. Supabase was not changed.");
 }
 
 function parseCsv(text) {
@@ -2810,6 +3545,7 @@ async function uploadCurrentMenuToCloud() {
 
 async function loadCloudDataIntoApp(options = {}) {
   const silent = Boolean(options?.silent);
+  if (options?.respectLocalRestore && state.localRestoreActive) return false;
   const button = document.getElementById("loadCloudData");
   if (button) button.disabled = true;
   if (!silent) setDatabaseStatus("checking", "Loading cloud data...", "Local storage remains available as fallback.");
@@ -2864,6 +3600,7 @@ async function loadCloudDataIntoApp(options = {}) {
       state.soldOutIds = cloud.menuItems.filter((item) => item.sold_out).map((item) => item.local_id);
     }
 
+    state.localRestoreActive = false;
     saveState();
     render();
     if (!silent) {
@@ -3073,6 +3810,26 @@ function renderSoundToggle() {
   button.classList.toggle("active", soundEnabled);
 }
 
+function loadColorMode() {
+  try { return window.localStorage.getItem("sake-street-color-mode") === "dark"; } catch { return false; }
+}
+
+function applyColorMode() {
+  document.documentElement.dataset.colorMode = darkMode ? "dark" : "light";
+  const button = document.getElementById("themeModeToggle");
+  if (button) {
+    button.textContent = darkMode ? "☀" : "◐";
+    button.title = darkMode ? "Switch to light mode" : "Switch to dark mode";
+    button.setAttribute("aria-label", button.title);
+  }
+}
+
+function toggleColorMode() {
+  darkMode = !darkMode;
+  try { window.localStorage.setItem("sake-street-color-mode", darkMode ? "dark" : "light"); } catch {}
+  applyColorMode();
+}
+
 function setSoundEnabled(enabled) {
   soundEnabled = Boolean(enabled);
   try {
@@ -3113,6 +3870,17 @@ async function playKitchenChime() {
 }
 
 function bindGlobalActions() {
+  document.getElementById("themeModeToggle")?.addEventListener("click", toggleColorMode);
+  document.getElementById("heroMenuButton")?.addEventListener("click", () => document.getElementById("categoryRow")?.scrollIntoView({ behavior: "smooth", block: "start" }));
+  document.querySelectorAll("[data-customer-nav]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const action = button.dataset.customerNav;
+      if (action === "home") window.scrollTo({ top: 0, behavior: "smooth" });
+      if (action === "menu") document.getElementById("categoryRow")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      if (action === "orders") (document.getElementById("customerOrderStatus")?.classList.contains("hidden") ? document.getElementById("orderPanel") : document.getElementById("customerOrderStatus"))?.scrollIntoView({ behavior: "smooth", block: "start" });
+      if (action === "account") document.getElementById("staffLoginButton")?.click();
+    });
+  });
   document.getElementById("staffLoginButton").addEventListener("click", () => openStaffLogin());
   document.getElementById("staffLogoutButton").addEventListener("click", handleStaffLogout);
   document.getElementById("staffLoginForm").addEventListener("submit", handleStaffLogin);
@@ -3129,6 +3897,15 @@ function bindGlobalActions() {
 
   document.getElementById("submitOrder").addEventListener("click", submitOrder);
   document.getElementById("printKitchen").addEventListener("click", printKitchen);
+  document.getElementById("kitchenDisplayMode").addEventListener("click", () => setKitchenDisplayMode(!kitchenDisplayMode));
+  document.getElementById("frontDeskStatusFilter").addEventListener("change", (event) => {
+    frontDeskStatusFilter = event.target.value;
+    renderFrontDesk();
+  });
+  document.getElementById("frontDeskSearch").addEventListener("input", (event) => {
+    frontDeskSearch = event.target.value;
+    renderFrontDesk();
+  });
   document.getElementById("clearLocalOrders").addEventListener("click", () => {
     const localOrders = state.orders.filter((order) => !order.cloudId && order.cloudStatus !== "synced");
     if (!localOrders.length) {
@@ -3143,6 +3920,15 @@ function bindGlobalActions() {
     showOrderToast(`${localOrders.length} local-only order${localOrders.length === 1 ? "" : "s"} cleared.`);
   });
   document.getElementById("printReport").addEventListener("click", printDailyReport);
+  document.getElementById("exportReportCsv").addEventListener("click", exportReportCsv);
+  document.getElementById("reportToday").addEventListener("click", () => {
+    selectedReportDate = localDateKey(new Date());
+    renderReports();
+  });
+  document.getElementById("reportDate").addEventListener("change", (event) => {
+    selectedReportDate = event.target.value || localDateKey(new Date());
+    renderReports();
+  });
   document.getElementById("printBillTop").addEventListener("click", () => {
     setView("frontdesk");
     printInvoice(selectedFrontTableId);
@@ -3195,6 +3981,14 @@ function bindGlobalActions() {
   document.getElementById("importCsv").addEventListener("click", importCsvPreview);
   document.getElementById("clearCsv").addEventListener("click", clearCsvImport);
   document.getElementById("downloadSampleCsv").addEventListener("click", downloadSampleCsv);
+  document.getElementById("exportBackup").addEventListener("click", exportBackup);
+  document.getElementById("previewBackup").addEventListener("click", previewBackupFile);
+  document.getElementById("restoreBackup").addEventListener("click", restoreBackupLocally);
+  document.getElementById("clearBackup").addEventListener("click", clearBackupRestore);
+  document.getElementById("backupFile").addEventListener("change", () => {
+    backupRestorePreview = null;
+    renderBackupPreview();
+  });
   document.getElementById("checkDatabase").addEventListener("click", checkDatabaseConnection);
   document.getElementById("uploadCloudMenu").addEventListener("click", uploadCurrentMenuToCloud);
   document.getElementById("loadCloudData").addEventListener("click", loadCloudDataIntoApp);
@@ -3213,11 +4007,13 @@ function bindGlobalActions() {
 }
 
 function render() {
+  applyColorMode();
   applyTheme();
   renderStaffSession();
   renderTablePicker();
   renderCategories();
-  renderMenu();
+  if (menuLoadedOnce) renderMenu();
+  else renderMenuLoading();
   renderCart();
   renderCustomerOrderStatus();
   renderKitchen();
@@ -3226,13 +4022,18 @@ function render() {
   renderSetup();
 }
 
+darkMode = loadColorMode();
 renderTabs();
 bindGlobalActions();
+setupFloatingCart();
 render();
 checkDatabaseConnection();
-loadCloudDataIntoApp({ silent: true });
+loadCloudDataIntoApp({ silent: true, respectLocalRestore: true });
 initializeStaffAuth();
 startCustomerOrderStatusSync();
+window.setInterval(() => {
+  if (activeView === "kitchen") renderKitchen();
+}, 30000);
 
 document.addEventListener("visibilitychange", () => {
   if (!document.hidden && staffUser) syncCloudOrders({ notify: false });

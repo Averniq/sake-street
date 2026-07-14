@@ -12,7 +12,20 @@
     <link rel="manifest" href="manifest.webmanifest" />
     <link rel="apple-touch-icon" href="assets/brand/sake-street-logo-mark.png" />
     <link rel="icon" type="image/png" href="assets/brand/sake-street-logo-mark.png" />
-    <link rel="stylesheet" href="styles.css?v=20260628-1" />
+    <link rel="stylesheet" href="styles.css?v=20260711-mobile" />
+    <style>
+      .theme-mode-toggle{width:2.5rem;padding:0;font-size:1.125rem}.customer-hero{position:relative;display:grid;grid-template-columns:minmax(0,1fr) 132px;min-height:208px;overflow:hidden;margin-bottom:1.25rem;padding:1.25rem;border:1px solid rgba(255,255,255,.14);border-radius:1rem;color:#fffaf0;background:linear-gradient(118deg,#171513,#302421 54%,#8e2c27 150%);box-shadow:0 18px 42px rgba(34,24,18,.14)}.customer-hero:after{position:absolute;inset:0;content:"";opacity:.3;background-image:radial-gradient(circle at 80% 15%,#efb572 0 2px,transparent 3px),radial-gradient(circle at 56% 78%,#efb572 0 1px,transparent 2px);background-size:34px 34px,25px 25px}.customer-hero-copy{position:relative;z-index:1;display:grid;align-content:start;gap:.5rem}.customer-hero .eyebrow{color:#e7b4a4}.customer-hero h2{font-size:1.875rem;font-weight:900;line-height:1.03;letter-spacing:-.04em}.customer-hero p:not(.eyebrow){max-width:20rem;font-size:.875rem;line-height:1.5;color:hsla(0,0%,100%,.7)}.hero-menu-button{display:flex;gap:.5rem;align-items:center;width:max-content;margin-top:.5rem;padding:.5rem .75rem;border:1px solid hsla(0,0%,100%,.2);border-radius:999px;color:#fff;background:hsla(0,0%,100%,.1);font-size:.75rem;font-weight:800;backdrop-filter:blur(12px)}.hero-orb{position:relative;z-index:1;display:grid;place-items:center;align-self:center;justify-self:end;width:7rem;height:7rem;border:1px solid hsla(0,0%,100%,.2);border-radius:999px;background:linear-gradient(135deg,#e7a678,#a72829 68%,#55201d);box-shadow:inset 0 1px 12px hsla(0,0%,100%,.35),0 16px 30px rgba(0,0,0,.25);font-size:3rem;font-weight:900;transform:rotate(-10deg)}
+      .menu-grid{grid-template-columns:1fr!important}.menu-card{position:relative;display:grid!important;grid-template-columns:112px minmax(0,1fr) 48px;overflow:visible!important}.menu-card:before{display:none!important}.food-photo{height:100%!important;min-height:7rem;border-radius:.5rem 0 0 .5rem}.menu-body{display:grid;align-content:center;gap:.25rem;min-width:0;padding:.75rem}.menu-meta strong{font-size:.875rem}.menu-category{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}.menu-card button[data-add]{align-self:center;width:2.5rem!important;min-height:2.5rem!important;margin:.5rem;border-radius:999px!important;font-size:1.25rem}.menu-card.just-added{animation:menu-added .52s cubic-bezier(.2,.8,.2,1)}.recommendation-label{display:flex;grid-column:1/-1;gap:.75rem;align-items:center;margin-top:.75rem;padding-top:1.25rem;border-top:1px solid hsl(var(--border-color))}.recommendation-label>span{display:grid;place-items:center;width:2.25rem;height:2.25rem;border-radius:999px;color:white;background:var(--accent)}.recommendation-label div{display:grid;line-height:1.25}.recommendation-label small{font-size:.75rem;font-weight:600;color:var(--muted)}.recommendation-label strong{font-size:1rem;font-weight:800}.menu-skeleton{pointer-events:none;border-color:transparent!important}.menu-skeleton .menu-body{gap:.5rem}.skeleton-photo,.menu-skeleton i{display:block;border-radius:.375rem;background:#e7e5e4;animation:pulse 2s cubic-bezier(.4,0,.6,1) infinite}.skeleton-photo{height:6rem;margin:.5rem}.menu-skeleton i:nth-child(1){width:75%;height:1rem}.menu-skeleton i:nth-child(2){width:100%;height:.75rem}.menu-skeleton i:nth-child(3){width:50%;height:.75rem}.floating-cart.cart-bump{animation:cart-bump .5s cubic-bezier(.2,.85,.3,1)}.customer-bottom-nav{display:none}
+      @media(max-width:980px){.floating-cart:not(.hidden){bottom:calc(74px + env(safe-area-inset-bottom))}}@media(max-width:640px){body[data-staff-role=customer] .tabs{display:none}.food-photo{height:100%!important;min-height:7rem}.customer-hero{grid-template-columns:minmax(0,1fr) 100px}.customer-hero h2{font-size:1.75rem}.hero-orb{width:5rem;height:5rem;font-size:1.875rem}.menu-card{grid-template-columns:92px minmax(0,1fr) 46px!important}.menu-desc{display:-webkit-box;overflow:hidden;font-size:.78rem;line-height:1.25rem;-webkit-box-orient:vertical;-webkit-line-clamp:2}.tag-row{display:none}.menu-card button[data-add]{width:2.5rem!important;height:2.5rem;margin:.375rem!important}body[data-staff-role=customer]{padding-bottom:calc(5.5rem + env(safe-area-inset-bottom))}.customer-bottom-nav{position:fixed;right:10px;bottom:calc(10px + env(safe-area-inset-bottom));left:10px;z-index:60;display:grid;grid-template-columns:repeat(4,1fr);width:calc(100% - 20px);padding:6px;border:1px solid hsla(0,0%,100%,.42);border-radius:18px;background:rgba(255,253,248,.78);box-shadow:0 12px 38px rgba(34,24,18,.18);backdrop-filter:blur(18px) saturate(1.3)}.customer-bottom-nav button{display:grid;gap:.125rem;justify-items:center;padding:.25rem 0;border-radius:.75rem;color:var(--muted);font-size:10px;font-weight:700}.customer-bottom-nav button span{font-size:1.125rem;line-height:1}.customer-bottom-nav button:first-child{color:var(--accent-dark);background:rgba(173,43,37,.08)}}
+      html[data-color-mode=dark]{color-scheme:dark;--background:21 16% 9%;--foreground:35 28% 92%;--card:20 15% 14%;--muted-color:28 13% 66%;--border-color:24 13% 25%;--paper:#211c1a;--panel:#27201e;--line:#4a3d38;--ink:#fff5e9;--muted:#c2b2a5;--header-bg:#100e0d;--header-ink:#fff6ed}html[data-color-mode=dark] body{background-image:linear-gradient(90deg,hsla(0,0%,100%,.022) 1px,transparent 1px)}html[data-color-mode=dark] .tabs,html[data-color-mode=dark] .customer-bottom-nav{border-color:hsla(0,0%,100%,.12);background:rgba(30,25,23,.78)}html[data-color-mode=dark] input,html[data-color-mode=dark] select,html[data-color-mode=dark] textarea,html[data-color-mode=dark] .ghost-button,html[data-color-mode=dark] .qty-controls{color:#fff6ed;background-color:#29211f}html[data-color-mode=dark] .qty-controls button{background-color:#342a27}html[data-color-mode=dark] .skeleton-photo,html[data-color-mode=dark] .menu-skeleton i{background-color:#3b302d}@keyframes menu-added{0%{transform:scale(1)}45%{transform:scale(1.018);box-shadow:0 0 0 4px rgba(173,43,37,.18)}to{transform:scale(1)}}@keyframes cart-bump{0%,to{transform:translateX(-50%) scale(1)}45%{transform:translateX(-50%) scale(1.035)}}
+      /* Reference-led customer menu: deliberately quiet around the food. */
+      .customer-menu-heading{display:flex;align-items:end;justify-content:space-between;gap:1rem;margin:.25rem 0 1rem}.customer-menu-heading h2{font-size:1.5rem;letter-spacing:-.03em}.customer-menu-heading>span{font-size:.75rem;font-weight:700;color:var(--muted)}
+      @media(max-width:640px){body[data-staff-role=customer] .app-header{min-height:3.75rem;align-items:center;padding:.65rem .9rem}body[data-staff-role=customer] .brand-logo{width:2.15rem;height:2.15rem;border-radius:.45rem}body[data-staff-role=customer] .brand-lockup{gap:.5rem}body[data-staff-role=customer] #brandSubtitle,body[data-staff-role=customer] #openStatus,body[data-staff-role=customer] #cloudSyncCluster,body[data-staff-role=customer] #soundToggle,body[data-staff-role=customer] #staffLoginButton,body[data-staff-role=customer] #printBillTop{display:none!important}body[data-staff-role=customer] #restaurantTitle{font-size:1rem;line-height:1.2}body[data-staff-role=customer] .header-actions{margin-left:auto}body[data-staff-role=customer] .theme-mode-toggle{min-height:2rem;border:0;background:transparent;color:var(--header-ink);box-shadow:none}body[data-staff-role=customer] main{padding-top:.85rem}body[data-staff-role=customer] .table-strip{margin-bottom:.85rem;padding:.1rem 0 .7rem;border-width:0 0 1px;border-radius:0;background:transparent;box-shadow:none;flex-direction:row;align-items:center}body[data-staff-role=customer] .table-strip .eyebrow{font-size:.625rem}body[data-staff-role=customer] .table-strip h2{font-size:1rem}body[data-staff-role=customer] .table-strip select{width:auto;min-height:2rem;padding:0 .4rem;border:0;background:transparent;font-size:.75rem;text-align:right;box-shadow:none}body[data-staff-role=customer] .category-row{gap:.45rem;margin-bottom:.7rem;padding-bottom:.35rem}body[data-staff-role=customer] .category-button{min-height:2.2rem;padding:0 .8rem;border-radius:.35rem;background:transparent;box-shadow:none;font-size:.78rem}body[data-staff-role=customer] .category-button.active{background:#211b18;border-color:#211b18}body[data-staff-role=customer] .customer-menu-heading{margin:.15rem 0 .7rem}body[data-staff-role=customer] .customer-menu-heading h2{font-size:1.28rem}body[data-staff-role=customer] .customer-menu-heading .eyebrow{font-size:.6rem}body[data-staff-role=customer] .menu-grid{gap:.55rem}body[data-staff-role=customer] .menu-card{border-radius:.35rem;box-shadow:none}body[data-staff-role=customer] .food-photo{border-radius:.3rem 0 0 .3rem}html[data-color-mode=dark] body[data-staff-role=customer] .category-button.active{background:#fff4e8;border-color:#fff4e8;color:#211b18}}
+      /* Compact desktop menu: photo, information, then one deliberate purchase column. */
+      .menu-purchase{display:grid;align-content:center;justify-items:end;gap:.65rem;padding:1rem .9rem}.menu-purchase>strong{color:var(--accent-dark);font-size:1rem;font-weight:900}.menu-purchase button[data-add]{display:grid;place-items:center;width:2.5rem;min-height:2.5rem;margin:0;border:1px solid var(--accent-dark);border-radius:999px;color:#fff;background:var(--accent);font-size:1.25rem;font-weight:800;box-shadow:0 4px 10px rgba(108,29,24,.18);transition:transform .18s ease,box-shadow .18s ease}.menu-purchase button[data-add]:hover{transform:scale(1.08);box-shadow:0 7px 16px rgba(108,29,24,.24)}.menu-skeleton .menu-purchase i{width:2.5rem;height:2.5rem;border-radius:999px}@media(min-width:981px){.customer-layout{grid-template-columns:minmax(0,980px) minmax(320px,380px);justify-content:space-between}.menu-grid{max-width:980px}.menu-card{grid-template-columns:230px minmax(0,1fr) 88px!important;min-height:172px}.food-photo{min-height:172px}.menu-body{padding:1rem 1.25rem}.menu-meta h3{font-size:1.06rem}.menu-desc{max-width:42rem}.menu-purchase{padding-right:1rem}}@media(max-width:640px){.menu-purchase{gap:.35rem;padding:.4rem .35rem}.menu-purchase>strong{font-size:.78rem}.menu-purchase button[data-add]{width:2.25rem;min-height:2.25rem;font-size:1.1rem}.menu-card{grid-template-columns:92px minmax(0,1fr) 56px!important}}
+      /* Keep every dish visible and prevent tablet layouts from inheriting desktop widths. */
+      html{overflow-y:scroll;scroll-behavior:smooth}body{max-width:100%;overflow-x:hidden;overflow-y:visible!important;overscroll-behavior-y:auto!important;touch-action:pan-y}.customer-layout,.menu-grid,.menu-card,.menu-body{min-width:0}.food-photo.custom-photo{background-color:#f4f1ed!important;background-position:center!important;background-repeat:no-repeat!important;background-size:contain!important}@media(max-width:1200px){.customer-layout{grid-template-columns:minmax(0,1fr)!important}.menu-grid{max-width:none!important}.order-panel{position:static!important;order:initial!important}.menu-card{grid-template-columns:170px minmax(0,1fr) 78px!important;min-height:150px}.food-photo{min-height:150px}.menu-body{padding:1rem}.menu-purchase{padding:.75rem}}@media(max-width:640px){.menu-card{grid-template-columns:112px minmax(0,1fr) 58px!important;min-height:128px}.food-photo{min-height:128px}.menu-body{padding:.7rem}.menu-desc{font-size:.75rem;line-height:1.15rem}.menu-purchase{padding:.4rem .3rem}.menu-purchase>strong{font-size:.75rem}}
+    </style>
   </head>
   <body>
     <header class="app-header">
@@ -30,6 +43,7 @@
           <span class="sync-detail" id="cloudSyncDetail">Not synced yet</span>
         </div>
         <button class="ghost-button sound-toggle" id="soundToggle" type="button" aria-label="Toggle kitchen order sound" aria-pressed="false" title="Kitchen order sound is off">Sound Off</button>
+        <button class="ghost-button theme-mode-toggle" id="themeModeToggle" type="button" aria-label="Switch to dark mode" title="Switch to dark mode">◐</button>
         <button class="ghost-button header-login-button" id="staffLoginButton" type="button">Staff Login</button>
         <div class="staff-identity hidden" id="staffIdentity">
           <div>
@@ -63,11 +77,18 @@
         <section class="customer-order-status hidden" id="customerOrderStatus" aria-live="polite"></section>
 
         <div class="category-row" id="categoryRow"></div>
+        <div class="customer-menu-heading">
+          <div>
+            <p class="eyebrow">Table ordering</p>
+            <h2 id="menuSectionTitle">Menu</h2>
+          </div>
+          <span>Tap + to add</span>
+        </div>
 
         <div class="customer-layout">
           <section class="menu-grid" id="menuGrid" aria-label="Menu items"></section>
 
-          <aside class="order-panel" aria-label="Current cart">
+          <aside class="order-panel" id="orderPanel" aria-label="Current cart">
             <div class="panel-title">
               <h2>Cart</h2>
               <button class="ghost-button" id="clearCart">Clear</button>
@@ -102,15 +123,41 @@
             <h2>Kitchen Orders</h2>
           </div>
           <div class="toolbar-actions">
+            <button class="ghost-button" id="kitchenDisplayMode" type="button" title="Show a large kitchen-only order board">Kitchen Display</button>
             <button class="ghost-button" id="clearLocalOrders" type="button">Clear Local</button>
             <button class="primary-button" id="printKitchen">Print New</button>
           </div>
         </div>
         <div class="kitchen-alert hidden" id="kitchenAlert" role="status" aria-live="polite"></div>
         <div class="order-board" id="kitchenBoard"></div>
+        <details class="setup-panel availability-panel">
+          <summary>
+            <span>
+              <span class="eyebrow">Kitchen control</span>
+              <strong>Menu Availability</strong>
+            </span>
+            <span class="muted" id="availabilitySummary">0 sold out</span>
+          </summary>
+          <div class="availability-grid" id="kitchenAvailability"></div>
+        </details>
       </section>
 
       <section id="frontdesk" class="view">
+        <div class="frontdesk-filters" id="frontDeskFilters">
+          <label>Show
+            <select id="frontDeskStatusFilter">
+              <option value="open">Open tables</option>
+              <option value="all">All tables</option>
+              <option value="new">New orders</option>
+              <option value="preparing">Preparing</option>
+              <option value="ready">Ready to serve</option>
+            </select>
+          </label>
+          <label>Find table
+            <input id="frontDeskSearch" type="search" placeholder="Table name">
+          </label>
+          <span id="frontDeskFilterSummary" class="muted"></span>
+        </div>
         <div class="frontdesk-layout">
           <aside class="table-list" id="frontTableList" aria-label="Open tables"></aside>
           <section class="invoice-panel" id="invoicePanel" aria-label="Invoice"></section>
@@ -123,7 +170,12 @@
             <p class="eyebrow">Daily performance</p>
             <h2>Reports</h2>
           </div>
-          <button class="primary-button" id="printReport">Print Report</button>
+          <div class="toolbar-actions">
+            <input id="reportDate" type="date" aria-label="Report date" />
+            <button class="ghost-button" id="reportToday" type="button">Today</button>
+            <button class="ghost-button" id="exportReportCsv" type="button">CSV</button>
+            <button class="primary-button" id="printReport">Print Report</button>
+          </div>
         </div>
         <div class="report-grid" id="reportMetrics"></div>
         <div class="report-layout">
@@ -162,6 +214,31 @@
             <div class="database-actions">
               <button class="primary-button" id="uploadCloudMenu" type="button">Upload Current Menu</button>
               <button class="ghost-button" id="loadCloudData" type="button">Load Cloud Data</button>
+            </div>
+          </section>
+
+          <section class="setup-panel wide-panel backup-panel">
+            <div class="panel-title">
+              <div>
+                <p class="eyebrow">Data safety</p>
+                <h2>Backup &amp; Restore</h2>
+              </div>
+              <button class="primary-button" id="exportBackup" type="button">Export Backup</button>
+            </div>
+            <p class="muted backup-description">Includes the restaurant profile, theme, menu, sold-out status, image references, tables and QR tokens. Orders and staff accounts are excluded.</p>
+            <div class="backup-controls">
+              <label class="field">
+                <span>Backup file</span>
+                <input id="backupFile" type="file" accept=".json,application/json" />
+              </label>
+              <div class="form-actions">
+                <button class="ghost-button" id="previewBackup" type="button">Preview Backup</button>
+                <button class="submit-button" id="restoreBackup" type="button" disabled>Restore Locally</button>
+                <button class="ghost-button" id="clearBackup" type="button">Clear</button>
+              </div>
+            </div>
+            <div class="backup-preview" id="backupPreview">
+              <div class="empty-state">Choose a TableOrder backup file to inspect it before restoring.</div>
             </div>
           </section>
 
@@ -362,6 +439,21 @@
       </section>
     </main>
 
+    <nav class="customer-bottom-nav" aria-label="Customer navigation">
+      <button type="button" data-customer-nav="home"><span>⌂</span>Home</button>
+      <button type="button" data-customer-nav="menu"><span>☷</span>Menu</button>
+      <button type="button" data-customer-nav="orders"><span>◴</span>Orders</button>
+      <button type="button" data-customer-nav="account"><span>◌</span>Account</button>
+    </nav>
+
+    <button class="floating-cart hidden" id="floatingCart" type="button" aria-label="View current cart">
+      <span class="floating-cart-summary">
+        <strong id="floatingCartCount">0 items</strong>
+        <small id="floatingCartTotal">$0.00</small>
+      </span>
+      <span class="floating-cart-action">View Cart</span>
+    </button>
+
     <div class="modal-backdrop hidden" id="optionModal" role="dialog" aria-modal="true" aria-labelledby="optionTitle">
       <section class="option-modal">
         <div class="panel-title">
@@ -414,9 +506,9 @@
       <section class="print-page"></section>
     </template>
 
-    <script src="mobile-shell.js?v=20260628-1"></script>
+    <script src="mobile-shell.js?v=20260707-1"></script>
     <script src="supabase-config.js?v=20260622-1"></script>
-    <script src="supabase-client.js?v=20260628-1"></script>
-    <script src="app.js?v=20260628-1"></script>
+    <script src="supabase-client.js?v=20260707-1"></script>
+    <script src="app.js?v=20260707-1"></script>
   </body>
 </html>
