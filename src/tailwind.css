@@ -80,7 +80,7 @@
 
 @layer components {
   .app-header {
-    @apply sticky top-0 z-40 flex items-center justify-between gap-4 border-b px-4 py-4 md:px-8;
+    @apply sticky top-0 z-40 flex items-center justify-between gap-4 border-b px-4 py-2.5 md:px-8;
     color: var(--header-ink);
     background: var(--header-bg);
     border-color: rgba(255, 250, 240, 0.12);
@@ -93,7 +93,9 @@
     color: var(--accent-dark);
     border-color: rgba(255,255,255,.28);
   }
-.brand-logo img { @apply h-full w-full object-contain p-0.5; }
+  .brand-logo img { @apply h-full w-full object-contain p-0.5; }
+  .app-header .brand-logo { @apply h-14 w-14 rounded-xl; }
+  .app-header .brand-logo img { @apply p-0; }
   .header-actions { @apply flex items-center justify-end gap-2; }
   .theme-mode-toggle { @apply w-10 px-0 text-lg; }
   .header-login-button { @apply border-white/20 bg-white/10 text-white hover:bg-white/15; }
