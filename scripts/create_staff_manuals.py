@@ -286,6 +286,147 @@ def quick_guide():
     return doc
 
 
+def detailed_manual_english():
+    doc = Document()
+    configure(doc)
+    title_block(
+        doc,
+        "Staff Operations SOP",
+        "Sake Street QR Table Ordering - front desk, kitchen and manager procedures",
+        "Version 1.0  |  15 July 2026  |  Use with sakestreet.aveniq.com.au",
+    )
+
+    doc.add_heading("1. Purpose", level=1)
+    add_body(doc, "This Standard Operating Procedure explains how staff handle QR table ordering, kitchen orders, sold-out items, front desk checks and daily system checks. Use the live screen as the source of truth.")
+    add_warning(doc, "Core rule:", "Always verify the table number, items, quantities and order note on screen before preparing food or taking payment.")
+
+    doc.add_heading("2. Opening checklist", level=1)
+    for item in [
+        "Open the website on a kitchen tablet or computer and sign in using Staff Login with the correct kitchen or manager account.",
+        "Confirm that the header shows Open. If it shows Closed, a manager must change the restaurant ordering status in Admin.",
+        "Confirm Cloud sync shows Connected, or that the most recent sync time is normal. If it is Offline, check the venue network and notify the manager.",
+        "Open the Kitchen screen, keep it visible, and enable the sound alert if the kitchen requires it.",
+        "Use Menu Availability to mark every unavailable item as sold out before service starts.",
+        "Scan one table QR code and confirm it opens the correct table number and menu.",
+    ]:
+        add_bullet(doc, item)
+
+    doc.add_heading("3. Customer ordering flow", level=1)
+    add_body(doc, "Customers scan the QR code at their table, choose menu items, review their cart and press Send to Kitchen. They can then use View order status to follow their order.")
+    for step in [
+        "The customer selects items using the + button. Quantities can be changed in the cart using - and +.",
+        "The customer records dietary, allergy or preparation requests in Order note.",
+        "The customer checks the total and GST, then presses Send to Kitchen.",
+        "After successful submission the cart clears. Order progress is shown as Received, Preparing, Ready and Served.",
+        "Kitchen staff must check the table number, every line item, quantity and note before starting preparation.",
+    ]:
+        add_step(doc, step)
+    add_warning(doc, "Test orders:", "Every test order must begin with TEST ONLY - DO NOT PREPARE in the order note and must be acknowledged by the manager.")
+
+    doc.add_heading("4. Kitchen workflow", level=1)
+    add_body(doc, "Use the Kitchen screen to manage the live docket. Read the order note before preparing the first item.")
+    for step in [
+        "When a new order arrives, verify the table number, all items, quantities and the Order note. Clarify any allergy or unclear request with front desk before making the dish.",
+        "When preparation begins, change the order status to Preparing.",
+        "When every item is ready for service, change the status to Ready and notify front desk or the runner.",
+        "Only after food reaches the correct table, change the order status to Served.",
+        "For a cancellation, shortage or requested amendment, confirm with the manager or front desk first and record the reason where the system allows it.",
+    ]:
+        add_step(doc, step)
+    add_warning(doc, "Do not clear live orders:", "Do not use Clear Local while any genuine order still needs action. It is for local display or test clean-up only, not for removing active restaurant orders.")
+
+    doc.add_heading("5. Front desk and payment", level=1)
+    for step in [
+        "Find the table in Front Desk and review all open orders before discussing the total with the customer.",
+        "Before payment, confirm whether any items are still preparing, have been cancelled, or need to be split between guests.",
+        "Take payment using the restaurant's approved payment method. The payment and order status must match what was actually collected.",
+        "After completion, confirm the order no longer appears as open so that the same table is not charged twice.",
+    ]:
+        add_step(doc, step)
+
+    doc.add_heading("6. Menu availability and changes", level=1)
+    for step in [
+        "When kitchen runs out of an item, immediately mark it sold out in Kitchen > Menu Availability.",
+        "Only restore an item after the kitchen confirms it is available again.",
+        "Price, name, allergy, category, photo and permanent menu changes are manager or owner tasks in Admin. Check the customer menu after every change.",
+        "Avoid large menu edits during a busy service. One person makes the edit and another person checks it.",
+    ]:
+        add_step(doc, step)
+
+    doc.add_heading("7. Troubleshooting", level=1)
+    doc.add_heading("Customer cannot scan the QR code", level=2)
+    add_bullet(doc, "Ask the customer to adjust camera distance, increase screen brightness, or use the phone camera QR scanner. If needed, provide the table's Copy Link.")
+    add_bullet(doc, "Check that the code is printed clearly, has a clear white margin, and belongs to the correct table.")
+    doc.add_heading("Kitchen did not receive an order", level=2)
+    add_bullet(doc, "Confirm the customer saw a successful submission, and confirm the kitchen device is online, signed in and on the Kitchen screen.")
+    add_bullet(doc, "Check Cloud sync. Once the network is restored, refresh and search by table before asking the customer to submit again.")
+    doc.add_heading("Order or amount looks wrong", level=2)
+    add_bullet(doc, "Pause preparation or payment. Check the table number, quantities and note against the customer screen, then ask the manager to approve any correction, cancellation or replacement.")
+    doc.add_heading("The page looks out of date", level=2)
+    add_bullet(doc, "Refresh the browser. For an installed PWA, close it completely and reopen it. Record the device, time and a screenshot if the issue remains.")
+
+    doc.add_heading("8. Closing checklist", level=1)
+    for item in [
+        "Kitchen and Front Desk show no New, Preparing or Ready orders that still need action.",
+        "Confirm the final table has been paid or formally handed over to the next shift.",
+        "In Admin, export a Backup and store it in the restaurant's approved location. Backups do not include orders or staff accounts.",
+        "Check tomorrow's sold-out items, restaurant status and device charging.",
+        "Sign out from shared staff devices and close unneeded browser tabs.",
+    ]:
+        add_bullet(doc, item)
+
+    doc.add_heading("9. What to report", level=1)
+    add_body(doc, "When reporting a problem, include the time, table number, order reference if available, device type, network status, screenshot, steps already tried, and whether customers or the kitchen were affected.")
+    return doc
+
+
+def quick_guide_english():
+    doc = Document()
+    configure(doc)
+    title_block(
+        doc,
+        "Staff Quick Guide",
+        "One-page reference for Sake Street service and kitchen teams",
+        "Sake Street QR Ordering  |  Keep this beside the kitchen screen",
+    )
+
+    doc.add_heading("Start of service", level=1)
+    for item in [
+        "Staff Login -> open Kitchen or Front Desk.",
+        "Check Open, network and Cloud sync.",
+        "Keep Kitchen open and turn on sound alerts if required.",
+        "Mark unavailable dishes sold out before service.",
+    ]:
+        add_bullet(doc, item)
+
+    doc.add_heading("Kitchen", level=1)
+    for item in [
+        "For every new order: check table + items + quantity + Order note.",
+        "Start cooking -> Preparing.",
+        "All items ready -> Ready.",
+        "Food delivered to the correct table -> Served.",
+        "Allergy, shortage or unclear note: stop and ask front desk first.",
+    ]:
+        add_bullet(doc, item)
+
+    doc.add_heading("Front desk", level=1)
+    for item in [
+        "Before payment, check all open orders for the table.",
+        "Confirm delivered, cancelled or split items before charging.",
+        "Do not ask a customer to submit again until you have checked the table's order status.",
+    ]:
+        add_bullet(doc, item)
+
+    doc.add_heading("Never forget", level=1)
+    add_warning(doc, "1.", "Read every Order note, especially allergies and ingredient removals.")
+    add_warning(doc, "2.", "Do not use Clear Local while genuine orders are still active.")
+    add_warning(doc, "3.", "Test orders must say TEST ONLY - DO NOT PREPARE.")
+
+    doc.add_heading("If something is wrong", level=1)
+    add_body(doc, "Record a screenshot, table number, time and status -> check network and Cloud sync -> tell the manager.")
+    return doc
+
+
 def save(doc, filename):
     OUT_DIR.mkdir(exist_ok=True)
     path = OUT_DIR / filename
@@ -294,5 +435,10 @@ def save(doc, filename):
 
 
 if __name__ == "__main__":
-    save(detailed_manual(), "Sake-Street-Staff-Operations-SOP.docx")
-    save(quick_guide(), "Sake-Street-Staff-Quick-Guide.docx")
+    import sys
+
+    if "--english-only" not in sys.argv:
+        save(detailed_manual(), "Sake-Street-Staff-Operations-SOP.docx")
+        save(quick_guide(), "Sake-Street-Staff-Quick-Guide.docx")
+    save(detailed_manual_english(), "Sake-Street-Staff-Operations-SOP-EN.docx")
+    save(quick_guide_english(), "Sake-Street-Staff-Quick-Guide-EN.docx")
