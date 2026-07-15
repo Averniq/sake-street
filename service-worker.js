@@ -1,10 +1,12 @@
-const SHELL_CACHE = "sake-street-shell-v9";
-const RUNTIME_CACHE = "sake-street-runtime-v9";
+const SHELL_CACHE = "sake-street-shell-v10";
+const RUNTIME_CACHE = "sake-street-runtime-v10";
 const APP_SHELL = [
   "/",
   "/index.html",
   "/manifest.webmanifest",
-  "/assets/brand/sake-street-logo-mark.png"
+  "/assets/brand/sake-street-logo-mark.png",
+  "/assets/brand/sake-street-logo-round.png",
+  "/assets/brand/sake-street-logo-round.webp"
 ];
 
 self.addEventListener("install", (event) => {

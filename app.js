@@ -22,6 +22,7 @@ const DEFAULT_LOGO_SVG = `
 
 const DEFAULT_LOGO_DATA = "/assets/brand/sake-street-logo-mark.webp";
 const DEFAULT_LOGO_WATERMARK = "/assets/brand/sake-street-logo-full.webp";
+const HEADER_LOGO_DATA = "/assets/brand/sake-street-logo-round.webp";
 
 const themePresets = {
   japaneseIzakaya: {
@@ -2706,7 +2707,8 @@ function renderBrand() {
 
   const logo = document.getElementById("brandLogo");
   if (profile.logoData) {
-    logo.innerHTML = `<img src="${profile.logoData}" alt="${escapeHtml(profile.name)} logo">`;
+    const headerLogo = profile.logoData === DEFAULT_LOGO_DATA ? HEADER_LOGO_DATA : profile.logoData;
+    logo.innerHTML = `<img src="${headerLogo}" alt="${escapeHtml(profile.name)} logo">`;
   } else {
     logo.textContent = profile.name
       .split(/\s+/)
