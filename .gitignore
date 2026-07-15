@@ -4,6 +4,7 @@ dist/
 .tools/
 .agents/
 .pnpm-store/
+tmp/
 aveniq-site/
 aveniq-saas/
 image-contact-sheets/
