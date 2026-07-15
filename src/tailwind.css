@@ -93,7 +93,7 @@
     color: var(--accent-dark);
     border-color: rgba(255,255,255,.28);
   }
-  .brand-logo img { @apply h-full w-full object-contain p-1.5; }
+.brand-logo img { @apply h-full w-full object-contain p-0.5; }
   .header-actions { @apply flex items-center justify-end gap-2; }
   .theme-mode-toggle { @apply w-10 px-0 text-lg; }
   .header-login-button { @apply border-white/20 bg-white/10 text-white hover:bg-white/15; }

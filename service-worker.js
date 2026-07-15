@@ -1,5 +1,5 @@
-const SHELL_CACHE = "sake-street-shell-v7";
-const RUNTIME_CACHE = "sake-street-runtime-v7";
+const SHELL_CACHE = "sake-street-shell-v8";
+const RUNTIME_CACHE = "sake-street-runtime-v8";
 const APP_SHELL = [
   "/",
   "/index.html",
