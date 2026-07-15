@@ -1018,8 +1018,15 @@ function drawQrVersion(modules, reserved, size, version) {
 }
 
 function drawQrCanvas(canvas, text) {
-  const modules = createQrCode(text);
-  const size = modules.length;
+  if (typeof window.qrcode !== "function") {
+    throw new Error("QR generator failed to load. Please refresh and try again.");
+  }
+
+  const qr = window.qrcode(0, "M");
+  qr.addData(text, "Byte");
+  qr.make();
+
+  const size = qr.getModuleCount();
   const quietZone = 4;
   const scale = Math.floor(canvas.width / (size + quietZone * 2));
   const qrSize = scale * (size + quietZone * 2);
@@ -1028,11 +1035,11 @@ function drawQrCanvas(canvas, text) {
   context.fillStyle = "#ffffff";
   context.fillRect(0, 0, canvas.width, canvas.height);
   context.fillStyle = "#111111";
-  modules.forEach((row, y) => {
-    row.forEach((dark, x) => {
-      if (dark) context.fillRect(offset + x * scale, offset + y * scale, scale, scale);
-    });
-  });
+  for (let row = 0; row < size; row += 1) {
+    for (let col = 0; col < size; col += 1) {
+      if (qr.isDark(row, col)) context.fillRect(offset + col * scale, offset + row * scale, scale, scale);
+    }
+  }
 }
 
 function staffCanAccess(view) {
