@@ -1558,7 +1558,10 @@ function renderFloatingCart(entries = cartEntries()) {
   const button = document.getElementById("floatingCart");
   if (!button) return;
   const itemCount = entries.reduce((sum, entry) => sum + entry.quantity, 0);
-  const show = activeView === "customer" && itemCount > 0 && !cartPanelVisible;
+  const panel = document.getElementById("orderPanel");
+  const panelRect = panel?.getBoundingClientRect();
+  const panelInView = Boolean(panelRect && panelRect.top < window.innerHeight - 72 && panelRect.bottom > 0);
+  const show = activeView === "customer" && itemCount > 0 && !cartPanelVisible && !panelInView;
   button.classList.toggle("hidden", !show);
   document.body.classList.toggle("has-floating-cart", show);
   document.getElementById("floatingCartCount").textContent = `${itemCount} item${itemCount === 1 ? "" : "s"}`;
@@ -1571,19 +1574,32 @@ function setupFloatingCart() {
   if (!panel || !button) return;
 
   button.addEventListener("click", () => {
+    cartPanelVisible = true;
+    renderFloatingCart();
     panel.scrollIntoView({ behavior: "smooth", block: "start" });
   });
 
-  if (!("IntersectionObserver" in window)) return;
-  cartVisibilityObserver?.disconnect();
-  cartVisibilityObserver = new IntersectionObserver(
-    ([entry]) => {
-      cartPanelVisible = entry.isIntersecting;
-      renderFloatingCart();
-    },
-    { threshold: 0.2 }
-  );
-  cartVisibilityObserver.observe(panel);
+  let visibilityFrame = 0;
+  const updatePanelVisibility = () => {
+    visibilityFrame = 0;
+    const rect = panel.getBoundingClientRect();
+    const visible = rect.top < window.innerHeight - 72 && rect.bottom > 0;
+    if (visible === cartPanelVisible) return;
+    cartPanelVisible = visible;
+    renderFloatingCart();
+  };
+  const schedulePanelVisibility = () => {
+    if (!visibilityFrame) visibilityFrame = requestAnimationFrame(updatePanelVisibility);
+  };
+  window.addEventListener("scroll", schedulePanelVisibility, { passive: true });
+  window.addEventListener("resize", schedulePanelVisibility, { passive: true });
+
+  if ("IntersectionObserver" in window) {
+    cartVisibilityObserver?.disconnect();
+    cartVisibilityObserver = new IntersectionObserver(schedulePanelVisibility, { threshold: 0 });
+    cartVisibilityObserver.observe(panel);
+  }
+  schedulePanelVisibility();
 }
 
 function renderOrderConfirmation() {
