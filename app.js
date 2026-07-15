@@ -826,13 +826,14 @@ function pushBits(target, value, length) {
 }
 
 function createQrCode(text) {
-  const version = 10;
+  // Table links are short. Version 5 keeps the modules large enough to scan
+  // reliably from a backlit screen, while M correction tolerates glare/moire.
+  const version = 5;
   const size = version * 4 + 17;
-  const dataCodewords = 274;
-  const ecCodewords = 18;
+  const dataCodewords = 86;
+  const ecCodewords = 24;
   const blocks = [
-    { count: 2, data: 68, total: 86 },
-    { count: 2, data: 69, total: 87 }
+    { count: 2, data: 43, total: 67 }
   ];
   const modules = Array.from({ length: size }, () => new Array(size).fill(false));
   const reserved = Array.from({ length: size }, () => new Array(size).fill(false));
@@ -845,8 +846,8 @@ function createQrCode(text) {
   drawQrFinder(modules, reserved, 0, 0);
   drawQrFinder(modules, reserved, size - 7, 0);
   drawQrFinder(modules, reserved, 0, size - 7);
-  [6, 28, 50].forEach((row) => {
-    [6, 28, 50].forEach((col) => {
+  [6, 30].forEach((row) => {
+    [6, 30].forEach((col) => {
       if (reserved[row]?.[col]) return;
       drawQrAlignment(modules, reserved, row, col);
     });
@@ -859,7 +860,7 @@ function createQrCode(text) {
   reserveQrFormatAreas(reserved, size);
   reserveQrVersionAreas(reserved, size);
 
-  const data = buildQrData(text, dataCodewords);
+  const data = buildQrData(text, dataCodewords, version);
   const dataBlocks = [];
   let offset = 0;
   blocks.forEach((block) => {
@@ -884,18 +885,20 @@ function createQrCode(text) {
   }
 
   placeQrData(modules, reserved, codewords, 0);
-  drawQrFormat(modules, reserved, size, 0);
-  drawQrVersion(modules, reserved, size, version);
+  drawQrFormat(modules, reserved, size, 0, 0);
   return modules;
 }
 
-function buildQrData(text, dataCodewords) {
+function buildQrData(text, dataCodewords, version) {
   const bytes = qrBytes(text);
   const bits = [];
   pushBits(bits, 0b0100, 4);
-  pushBits(bits, bytes.length, 16);
+  pushBits(bits, bytes.length, version < 10 ? 8 : 16);
   bytes.forEach((byte) => pushBits(bits, byte, 8));
   const maxBits = dataCodewords * 8;
+  if (bits.length > maxBits) {
+    throw new Error("QR link is too long. Please use a shorter ordering URL.");
+  }
   pushBits(bits, 0, Math.min(4, maxBits - bits.length));
   while (bits.length % 8) bits.push(0);
   const words = [];
@@ -979,8 +982,7 @@ function qrMask(mask, row, col) {
   return 0;
 }
 
-function drawQrFormat(modules, reserved, size, mask) {
-  const ecLevel = 1;
+function drawQrFormat(modules, reserved, size, mask, ecLevel) {
   const data = (ecLevel << 3) | mask;
   const bits = ((data << 10) | qrBch(data << 10, 0x537)) ^ 0x5412;
   const set = (row, col, index) => {
@@ -1018,9 +1020,10 @@ function drawQrVersion(modules, reserved, size, version) {
 function drawQrCanvas(canvas, text) {
   const modules = createQrCode(text);
   const size = modules.length;
-  const scale = Math.floor(canvas.width / (size + 8));
-  const qrSize = scale * (size + 8);
-  const offset = Math.floor((canvas.width - qrSize) / 2) + scale * 4;
+  const quietZone = 4;
+  const scale = Math.floor(canvas.width / (size + quietZone * 2));
+  const qrSize = scale * (size + quietZone * 2);
+  const offset = Math.floor((canvas.width - qrSize) / 2) + scale * quietZone;
   const context = canvas.getContext("2d");
   context.fillStyle = "#ffffff";
   context.fillRect(0, 0, canvas.width, canvas.height);
@@ -2457,7 +2460,7 @@ function renderSetup() {
             <img src="${escapeHtml(restaurant().logoData || DEFAULT_LOGO_DATA)}" alt="${escapeHtml(restaurant().name)} logo">
             <span>${escapeHtml(restaurant().name)}</span>
           </div>
-          <canvas class="qr-canvas" width="220" height="220" data-qr-table="${table.id}" aria-label="QR code for ${escapeHtml(table.name)}"></canvas>
+          <canvas class="qr-canvas" width="360" height="360" data-qr-table="${table.id}" aria-label="QR code for ${escapeHtml(table.name)}"></canvas>
           <strong>${escapeHtml(table.name)}</strong>
           <p class="qr-instruction">Scan to order at your table</p>
           <p class="muted">${escapeHtml(table.token)}</p>
